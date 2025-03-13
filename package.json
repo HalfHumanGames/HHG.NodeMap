@@ -1,0 +1,30 @@
+{
+  "name": "com.halfhumangames.nodemap",
+  "version": "1.0.1",
+  "displayName": "HHG - Node Map",
+  "description": "Common dependencies for our Unity packages",
+  "unity": "2020.3",
+  "unityRelease": "6f1",
+  "documentationUrl": "https://github.com/HalfHumanGames/HHG.NodeMap/blob/main/README.md",
+  "changelogUrl": "https://github.com/HalfHumanGames/HHG.NodeMap/blob/main/CHANGELOG.md",
+  "licensesUrl": "https://github.com/HalfHumanGames/HHG.NodeMap/blob/main/LICENSE",
+  "keywords": [
+    "Common",
+    "Shared",
+    "Utility",
+    "Library"
+  ],
+  "author": {
+    "name": "Half Human Games",
+    "email": "contact@halfhumangames.com",
+    "url": "https://github.com/HalfHumanGames"
+  },
+  "dependencies": {
+    "com.unity.addressables": "1.21.20",
+    "com.unity.mathematics": "1.2.6",
+    "com.unity.textmeshpro": "3.0.8",
+    "com.unity.splines": "2.4.0",
+    "com.unity.inputsystem": "1.8.1",
+    "com.mackysoft.serializereference-extensions": "1.4.0"
+  }
+}

@@ -1,94 +1,53 @@
-using System.Collections.Generic;
 using UnityEngine;
 
-namespace HHG.NodeMapSystem.Runtime
+namespace HHG.NodeMap.Runtime
 {
-    // TODO: Add min node count param and regen if nodes <= min node count
     public class NodeMapRenderer : MonoBehaviour
     {
-        public GameObject nodePrefab;
-        public LineRenderer linePrefab;
+        [SerializeField] private GameObject nodePrefab;
+        [SerializeField] private LineRenderer linePrefab;
+        [SerializeField] private NodeMapSettings settings = new NodeMapSettings();
 
-        [Header("Structured")]
-        public Vector2 startPoint2 = new Vector2(0, -10f);
-        public int size = 8;
-        public int iterations = 8;
-        public Vector2 spacing = new Vector2(1, 1);
-        public float filterDistanceX;
-
-        [Header("Organic")]
-        public Vector2 startPoint = new Vector2(0, -10f);
-        public Vector2 endPoint = new Vector2(0, 10f);
-        public Vector2 samplingAreaMin = new Vector2(-10f, -10f);
-        public Vector2 samplingAreaMax = new Vector2(10f, 10f);
-        public float minDistance = 1f;
-        public float filterDistance = 10f;
-
-        private NodeMapGenerator generator = new NodeMapGenerator();
         private NodeMap map;
-
-        void Start()
-        {
-            GenerateAndRender();
-        }
 
         private void OnEnable()
         {
-            GenerateAndRender();
-        }
-
-        private void GenerateAndRender()
-        {
             GenerateMap();
-            Render(map);
+            RenderMap(map);
         }
 
         private void GenerateMap()
         {
-            //map = generator.GenerateOrganic(startPoint, endPoint, samplingAreaMin, samplingAreaMax, minDistance, filterDistance);
-            map = generator.GenerateStructured(startPoint2, size, spacing, filterDistanceX, iterations);
+            settings.Validate();
+            map = NodeMapGenerator.Generate(settings);
         }
 
-        public void Render(NodeMap map)
+        public void RenderMap(NodeMap map)
         {
-            // Clear existing nodes and connections
             foreach (Transform child in transform)
             {
                 Destroy(child.gameObject);
             }
 
-            Dictionary<Node, GameObject> nodeObjects = new();
-
             foreach (Node node in map.Vertices)
             {
-                GameObject nodeObj = Instantiate(nodePrefab, node.Position, Quaternion.identity, transform);
-                nodeObjects[node] = nodeObj;
+                Instantiate(nodePrefab, node.Position, Quaternion.identity, transform);
             }
 
-            foreach (Path connection in map.Connections)
+            foreach (Path path in map.Paths)
             {
-                LineRenderer line = Instantiate(linePrefab, transform);
-                line.positionCount = 2;
-                line.SetPositions(new Vector3[] { connection.Source.Position, connection.Destination.Position });
+                LineRenderer lineRenderer = Instantiate(linePrefab, transform);
+                lineRenderer.positionCount = 2;
+                lineRenderer.SetPositions(new Vector3[] { path.Source.Position, path.Destination.Position });
             }
         }
 
         private void OnValidate()
         {
-            if (Vector2.Distance(startPoint, endPoint) < minDistance)
-            {
-                endPoint = startPoint + Vector2.up * minDistance;
-            }
-
-            samplingAreaMax.x = Mathf.Max(samplingAreaMax.x, samplingAreaMin.x + 1f);
-            samplingAreaMax.y = Mathf.Max(samplingAreaMax.y, samplingAreaMin.y + 1f);
-            minDistance = Mathf.Max(minDistance, .1f);
-            filterDistance = Mathf.Max(filterDistance, minDistance);
-
             GenerateMap();
         }
 
-        void OnDrawGizmos()
+        private void OnDrawGizmosSelected()
         {
             if (map == null)
             {
@@ -102,7 +61,7 @@ namespace HHG.NodeMapSystem.Runtime
             }
 
             Gizmos.color = Color.green;
-            foreach (Path connection in map.Connections)
+            foreach (Path connection in map.Paths)
             {
                 Gizmos.DrawLine(connection.Source.Position, connection.Destination.Position);
             }

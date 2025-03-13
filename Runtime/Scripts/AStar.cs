@@ -2,7 +2,7 @@ using HHG.Common.Runtime;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace HHG.NodeMapSystem.Runtime
+namespace HHG.NodeMap.Runtime
 {
     public static class AStar
     {
@@ -31,12 +31,13 @@ namespace HHG.NodeMapSystem.Runtime
 
                 foreach (Path connection in connections)
                 {
-                    if (connection.Source != current && connection.Destination != current)
+                    //if (connection.Source != current && connection.Destination != current)
+                    if (connection.Source != current)
                     {
                         continue;
                     }
 
-                    Node neighbor = connection.Source == current ? connection.Destination : connection.Source;
+                    Node neighbor = connection.Destination;
                     float tentativeGScore = gScore[current] + Vector2.Distance(current.Position, neighbor.Position);
 
                     if (!gScore.ContainsKey(neighbor) || tentativeGScore < gScore[neighbor])

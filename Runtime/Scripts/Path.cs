@@ -1,4 +1,4 @@
-namespace HHG.NodeMapSystem.Runtime
+namespace HHG.NodeMap.Runtime
 {
     [System.Serializable]
     public class Path
