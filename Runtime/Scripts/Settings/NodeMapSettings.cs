@@ -12,7 +12,7 @@ namespace HHG.NodeMap.Runtime
         public Vector2 SamplingAreaMax => samplingAreaMax;
         public int Size => size;
         public int Iterations => iterations;
-        public int Removals => removals;
+        public int RemovalsPerIteration => removalsPerIteration;
         public int MinNodeCount => minNodeCount;
         public int MaxNodeCount => maxNodeCount;
         public Vector2 Spacing => spacing;
@@ -25,7 +25,7 @@ namespace HHG.NodeMap.Runtime
 
         [SerializeField] private Algorithm algorithm;
         [SerializeField] private int iterations = 8;
-        [SerializeField] private int removals = 1;
+        [SerializeField] private int removalsPerIteration = 1;
         [SerializeField] private int minNodeCount = 25;
         [SerializeField] private int maxNodeCount = 100;
         [SerializeField] private Vector2 startPoint = new Vector2(0, -10f);
@@ -41,6 +41,8 @@ namespace HHG.NodeMap.Runtime
         [SerializeField] private float removalChance = .3f;
         [SerializeField] private float randomNoise = 0f;
 
+
+        // TODO: Possible to get weird errors, so need proper validation
         public void Validate()
         {
             //if (Vector2.Distance(startPoint, endPoint) < minDistance)

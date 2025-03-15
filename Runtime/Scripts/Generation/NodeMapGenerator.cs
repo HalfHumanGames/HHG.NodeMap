@@ -7,8 +7,6 @@ namespace HHG.NodeMap.Runtime
 {
     public static class NodeMapGenerator
     {
-        private const int retryCount = 100;
-
         private static readonly Dictionary<Algorithm, IAlgorithm> algorithms = new Dictionary<Algorithm, IAlgorithm>
         {
             { Algorithm.PoissonDisk, new PoissonDiskAlgorithm() },
@@ -20,28 +18,55 @@ namespace HHG.NodeMap.Runtime
             if (algorithms.TryGetValue(settings.Algorithm, out var algorithm))
             {
                 int minNodeCount = settings.MinNodeCount;
-                int retries = retryCount;
-                NodeMap nodeMap;
+                int maxNodeCount = settings.MaxNodeCount;
+                
+                NodeMap nodeMap = null;
+                NodeMap tempMap = null;
+
+                bool done = false;
+
                 do
                 {
-                    nodeMap = Helper(algorithm.Generate(settings), settings);
-
-                    if (retries-- < 0)
+                    for (int i = 0; i < 10; i++)
                     {
-                        minNodeCount--;
-                        retries = retryCount;
+                        nodeMap = algorithm.Generate(settings);
+
+                        for (int j = 0; j < 10; j++)
+                        {
+                            tempMap = Helper(nodeMap, settings);
+
+                            if (tempMap.Nodes.Count > minNodeCount && tempMap.Nodes.Count < maxNodeCount)
+                            {
+                                done = true;
+                                break;
+                            }
+                        }
+
+                        if (done)
+                        {
+                            break;
+                        }
                     }
 
-                } while (minNodeCount >= 3 && (nodeMap.Nodes.Count < minNodeCount || nodeMap.Nodes.Count > settings.MaxNodeCount));
+                    if (done)
+                    {
+                        break;
+                    }
 
-                if (minNodeCount < 3)
+                } while (minNodeCount-- > 3);
+
+                if (!done)
                 {
                     throw new System.ArgumentException($"Settings failed to generate a valid node map: {settings.Algorithm}");
                 }
 
+                nodeMap = tempMap;
+
+                float randomNoise = settings.RandomNoise;
+
                 foreach (Node node in nodeMap.Nodes)
                 {
-                    node.Position += Random.insideUnitCircle * settings.RandomNoise;
+                    node.Position += Random.insideUnitCircle * randomNoise;
                 }
 
                 AssignNodeAssets(nodeMap, nodeSettings);
@@ -57,10 +82,19 @@ namespace HHG.NodeMap.Runtime
             List<Node> path = new List<Node>();
             HashSet<Node> activePoints = new HashSet<Node>();
             NodeMap tempMap = nodeMap.Clone();
-            for (int i = 0; i < settings.Iterations; i++)
-            {
 
-                AStar.FindPath(tempMap.Start, tempMap.End, tempMap.Connections, path);
+            Node start = tempMap.Start;
+            Node end = tempMap.End;
+            List<Node> tempNodes = tempMap.Nodes;
+            List<Connection> tempConnections = tempMap.Connections;
+
+            int minNodeCount = settings.MinNodeCount;
+            int iterations = settings.Iterations;
+            int removalsPerIteration = settings.RemovalsPerIteration;
+
+            for (int i = 0; i < iterations; i++)
+            {
+                AStar.FindPath(start, end, tempConnections, path);
 
                 if (path.Count == 0)
                 {
@@ -69,9 +103,9 @@ namespace HHG.NodeMap.Runtime
 
                 activePoints.AddRange(path);
 
-                for (int j = 0; j < settings.Removals; j++)
+                for (int j = 0; j < removalsPerIteration; j++)
                 {
-                    if (path.Count <= 2)
+                    if (path.Count < 3)
                     {
                         break;
                     }
@@ -82,38 +116,49 @@ namespace HHG.NodeMap.Runtime
                     if (randomNode != null)
                     {
                         path.Remove(randomNode);
-                        tempMap.Nodes.Remove(randomNode);
-                        tempMap.Connections.RemoveAll(c => c.Source == randomNode || c.Destination == randomNode);
+                        tempNodes.Remove(randomNode);
+                        tempConnections.RemoveAll(c => c.Source == randomNode || c.Destination == randomNode);
                     }
                 }
             }
 
-            nodeMap.Nodes.Clear();
-            nodeMap.Nodes.AddRange(activePoints);
-            nodeMap.Connections.RemoveAll(c => !nodeMap.Nodes.Contains(c.Source) || !nodeMap.Nodes.Contains(c.Destination));
-            nodeMap.Connections.Shuffle();
+            List<Node> nodes = tempMap.Nodes;
+            List<Connection> connections = tempMap.Connections;
 
-            for (int i = 0; i < nodeMap.Connections.Count; i++)
+            nodes.Clear();
+            nodes.AddRange(activePoints);
+            connections.Clear();
+            connections.AddRange(nodeMap.Connections);
+            connections.RemoveAll(c => !nodes.Contains(c.Source) || !nodes.Contains(c.Destination));
+            connections.Shuffle();
+
+            int connectionCount = connections.Count;
+            float removalChance = settings.RemovalChance;
+
+            for (int i = 0; i < connectionCount; i++)
             {
-                Connection connection = nodeMap.Connections[i];
+                Connection connection = connections[i];
+                Node source = connection.Source;
+                Node destination = connection.Destination;
 
-                if (connection.Source == nodeMap.Start || connection.Destination == nodeMap.Start ||
-                    connection.Source == nodeMap.End || connection.Destination == nodeMap.End)
+                if (source == start || destination == start ||
+                    source == end || destination == end)
                 {
                     continue;
                 }
 
-                if (Random.value < settings.RemovalChance)
+                if (Random.value < removalChance)
                 {
-                    if (CountOutgoingConnections(nodeMap, connection.Source) > 1 &&
-                        CountIncomingConnections(nodeMap, connection.Destination) > 1)
+                    if (CountOutgoingConnections(tempMap, source) > 1 &&
+                        CountIncomingConnections(tempMap, destination) > 1)
                     {
-                        nodeMap.Connections.RemoveAt(i--);
+                        connections.RemoveAt(i--);
+                        connectionCount--;
                     }
                 }
             }
 
-            return nodeMap;
+            return tempMap;
         }
 
         private static int CountIncomingConnections(NodeMap nodeMap, Node node)
@@ -202,7 +247,6 @@ namespace HHG.NodeMap.Runtime
             return -1;
         }
 
-        // TODO: This does not yet check the NodeInfo.MinCount property, so need to retry if don't meet those requirements
         private static void AssignNodeAssets(NodeMap nodeMap, NodeSettings nodeSettings)
         {
             if (nodeSettings.NodeInfos.Count == 0)
@@ -226,6 +270,8 @@ namespace HHG.NodeMap.Runtime
                     nodeInfoCounts[nodeInfo] = 0;
                 }
 
+                nodeMap.Nodes.Shuffle();
+
                 foreach (Node node in nodeMap.Nodes)
                 {
                     NodeInfo nodeInfo = nodeSettings.NodeInfos.Where((nodeInfo) => NodeMeetsNodeInfoRequirements(nodeMap, node, nodeInfo, nodeInfoCounts)).SelectByWeight(nodeInfo => nodeInfo.SelectionWeight);
@@ -246,6 +292,11 @@ namespace HHG.NodeMap.Runtime
             // We only need to check the min count requirement since we already
             // check the max count requirment in NodeMeetsNodeInfoRequirements
             } while (attempts > 0 && nodeInfoCounts.Any(n => n.Key.MinCount != -1 && n.Value < n.Key.MinCount));
+
+            if (attempts == 0)
+            {
+                Debug.LogError("Failed to assign nodes");
+            }
         }
 
         private static bool NodeMeetsNodeInfoRequirements(NodeMap nodeMap, Node node, NodeInfo nodeInfo, Dictionary<NodeInfo, int> nodeCounts)

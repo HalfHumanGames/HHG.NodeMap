@@ -6,7 +6,7 @@ namespace HHG.NodeMap.Runtime
 {
     public static class AStar
     {
-        public static List<Node> FindPath(Node start, Node end, List<Connection> connections, List<Node> path)
+        public static bool FindPath(Node start, Node end, List<Connection> connections, List<Node> path)
         {
             path.Clear();
 
@@ -28,7 +28,7 @@ namespace HHG.NodeMap.Runtime
                         cameFrom.TryGetValue(current, out current);
                     }
                     path.Reverse();
-                    return path;
+                    return true;
                 }
 
                 foreach (Connection connection in connections)
@@ -51,7 +51,7 @@ namespace HHG.NodeMap.Runtime
                 }
             }
 
-            return path;
+            return false;
         }
     } 
 }

@@ -10,16 +10,27 @@ namespace HHG.NodeMap.Runtime
         public NodeMap Generate(NodeMapSettings settings)
         {
             NodeMap nodeMap = new NodeMap();
-            List<Vector2> points = PoissonDiskSampling.Sampling(settings.SamplingAreaMin, settings.SamplingAreaMax, settings.MinDistance);
 
-            Vector2 center = (settings.SamplingAreaMin + settings.SamplingAreaMax) / 2;
-            points = points.Where(p => Vector2.Distance(p, center) <= settings.FilterDistance && Vector2.Distance(p, settings.StartPoint) > settings.MinDistance && Vector2.Distance(p, settings.EndPoint) > settings.MinDistance).ToList();
-            points.Add(settings.StartPoint);
-            points.Add(settings.EndPoint);
+            Vector2 startPoint = settings.StartPoint;
+            Vector2 endPoint = settings.EndPoint;
+            Vector2 samplingAreaMin = settings.SamplingAreaMin;
+            Vector2 samplingAreaMax = settings.SamplingAreaMax;
+
+            float minDistance = settings.MinDistance;
+            float maxDistance = settings.MaxDistance;
+            float filterDistance = settings.FilterDistance;
+            float angleFilter = settings.AngleFilter;
+
+            List<Vector2> points = PoissonDiskSampling.Sampling(samplingAreaMin, samplingAreaMax, minDistance);
+
+            Vector2 center = (samplingAreaMin + samplingAreaMax) / 2;
+            points = points.Where(p => Vector2.Distance(p, center) <= filterDistance && Vector2.Distance(p, startPoint) > minDistance && Vector2.Distance(p, endPoint) > minDistance).ToList();
+            points.Add(startPoint);
+            points.Add(endPoint);
 
             Dictionary<Vector2, Node> pointToNode = points.ToDictionary(point => point, point => new Node { Position = point });
-            nodeMap.Start = pointToNode[settings.StartPoint];
-            nodeMap.End = pointToNode[settings.EndPoint];
+            nodeMap.Start = pointToNode[startPoint];
+            nodeMap.End = pointToNode[endPoint];
             nodeMap.Nodes.AddRange(pointToNode.Values);
 
             Delaunator.Point[] delaunayPoints = points.ConvertAll(p => new Delaunator.Point(p.x, p.y)).ToArray();
@@ -54,9 +65,7 @@ namespace HHG.NodeMap.Runtime
                 Vector2 direction = edge.Item2 - edge.Item1;
                 float angle = Vector2.Angle(Vector2.right, direction);
 
-                if (angle < settings.AngleFilter || 
-                    180f - angle < settings.AngleFilter || 
-                    Vector2.Distance(edge.Item1, edge.Item2) > settings.MaxDistance)
+                if (angle < angleFilter || 180f - angle < angleFilter || Vector2.Distance(edge.Item1, edge.Item2) > maxDistance)
                 {
                     continue;
                 }

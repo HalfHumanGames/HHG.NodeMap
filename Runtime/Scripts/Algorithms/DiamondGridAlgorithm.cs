@@ -10,24 +10,31 @@ namespace HHG.NodeMap.Runtime
         {
             NodeMap nodeMap = new NodeMap();
 
+            int size = settings.Size;
+            float cos45 = Mathf.Cos(Mathf.PI / 4f);
+            float sin45 = Mathf.Sin(Mathf.PI / 4f);
+            float spacingX = settings.Spacing.x;
+            float spacingY = settings.Spacing.y;
+            float filterDistance = settings.FilterDistance;
+
             List<Vector2> points = new List<Vector2>();
-            for (int y = 0; y < settings.Size; y++)
+            for (int y = 0; y < size; y++)
             {
-                for (int x = 0; x < settings.Size; x++)
+                for (int x = 0; x < size; x++)
                 {
-                    points.Add(new Vector2(x, y) * 1.41f);
+                    points.Add(new Vector2(x, y));
                 }
             }
 
             List<Vector2> rotatedPoints = new List<Vector2>();
             foreach (Vector2 point in points)
             {
-                float rotatedX = (point.x - point.y) * Mathf.Cos(Mathf.PI / 4f);
-                float rotatedY = (point.x + point.y) * Mathf.Sin(Mathf.PI / 4f);
+                float rotatedX = (point.x - point.y) * cos45;
+                float rotatedY = (point.x + point.y) * sin45;
 
-                Vector2 rotatedAndSpaced = new Vector2(rotatedX * settings.Spacing.x, rotatedY * settings.Spacing.y);
+                Vector2 rotatedAndSpaced = new Vector2(rotatedX * spacingX, rotatedY * spacingY);
 
-                if (Mathf.Abs(rotatedAndSpaced.x) < settings.FilterDistance)
+                if (Mathf.Abs(rotatedAndSpaced.x) < filterDistance)
                 {
                     rotatedPoints.Add(rotatedAndSpaced);
                 }
@@ -43,7 +50,7 @@ namespace HHG.NodeMap.Runtime
                 nodeMap.Nodes.Add(node);
             }
 
-            float dist = Mathf.Sqrt(Mathf.Pow(settings.Spacing.y, 2f) + Mathf.Pow(settings.Spacing.x, 2f));
+            float dist = Mathf.Sqrt(Mathf.Pow(spacingY, 2f) + Mathf.Pow(spacingX, 2f));
 
             for (int i = 0; i < translatedPoints.Count; i++)
             {

@@ -17,17 +17,26 @@ namespace HHG.NodeMap.Runtime
 
         private void OnEnable()
         {
-            PerformanceUtil.MeasureDuration("Time", () =>
-            {
-                GenerateMap();
-                RenderMap(map);
-            });
+            GenerateMap();
+            RenderMap(map);
         }
 
+        [ContextMenu("Generate Map")]
         private void GenerateMap()
         {
             settings.Validate();
             map = NodeMapGenerator.Generate(settings, nodeSettings);
+        }
+
+        [ContextMenu("Performance Test")]
+        private void PerformanceTest()
+        {
+            settings.Validate();
+
+            PerformanceUtil.MeasureAverageDuration("Average generation time", () =>
+            {
+                NodeMapGenerator.Generate(settings, nodeSettings);
+            }, 100);
         }
 
         public void RenderMap(NodeMap map)
