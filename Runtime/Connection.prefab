@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 199131211915076392}
   - component: {fileID: 8471323376003720773}
+  - component: {fileID: -8583338739291554472}
   m_Layer: 0
   m_Name: Connection
   m_TagString: Untagged
@@ -79,7 +80,7 @@ LineRenderer:
   - {x: -0.015330821, y: -2.9969835, z: 0}
   m_Parameters:
     serializedVersion: 3
-    widthMultiplier: 0.2
+    widthMultiplier: 0.3
     widthCurve:
       serializedVersion: 2
       m_Curve:
@@ -129,10 +130,22 @@ LineRenderer:
     numCapVertices: 0
     alignment: 0
     textureMode: 4
-    textureScale: {x: 5, y: 1}
+    textureScale: {x: 3.5, y: 1}
     shadowBias: 0
     generateLightingData: 0
   m_MaskInteraction: 0
   m_UseWorldSpace: 0
   m_Loop: 0
   m_ApplyActiveColorSpace: 1
+--- !u!114 &-8583338739291554472
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5422474247938386985}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f0f6f3e10ef5ad4a80a980ecd3be994, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

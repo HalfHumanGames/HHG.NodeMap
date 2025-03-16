@@ -9,37 +9,40 @@ namespace HHG.NodeMap.Runtime
         [SerializeField] private Transform nodeContainer;
         [SerializeField] private Transform connectionContainer;
         [SerializeField] private NodeRenderer nodePrefab;
-        [SerializeField] private LineRenderer connectionPrefab;
+        [SerializeField] private ConnectionRenderer connectionPrefab;
         [SerializeField] private NodeMapSettings settings = new NodeMapSettings();
         [SerializeField] private NodeSettings nodeSettings = new NodeSettings();
 
         private NodeMap map;
+        private bool hasStarted;
 
         private void OnEnable()
         {
-            GenerateMap();
-            RenderMap(map);
+            if (hasStarted)
+            {
+                GenerateAndRenderMap();
+            }
         }
 
-        [ContextMenu("Generate Map")]
+        private void Start()
+        {
+            GenerateAndRenderMap();
+            hasStarted = true;
+        }
+
+        private void GenerateAndRenderMap()
+        {
+            GenerateMap();
+            RenderMap();
+        }
+
         private void GenerateMap()
         {
             settings.Validate();
             map = NodeMapGenerator.Generate(settings, nodeSettings);
         }
 
-        [ContextMenu("Performance Test")]
-        private void PerformanceTest()
-        {
-            settings.Validate();
-
-            PerformanceUtil.MeasureAverageDuration("Average generation time", () =>
-            {
-                NodeMapGenerator.Generate(settings, nodeSettings);
-            }, 100);
-        }
-
-        public void RenderMap(NodeMap map)
+        private void RenderMap()
         {
             nodeContainer.gameObject.DestroyChildren();
             connectionContainer.gameObject.DestroyChildren();
@@ -50,11 +53,9 @@ namespace HHG.NodeMap.Runtime
             foreach (Node node in map.Nodes)
             {
                 NodeRenderer nodeRenderer = Instantiate(nodePrefab, node.Position, Quaternion.identity, nodeContainer);
-
-                nodeRenderer.Refresh(node.NodeAsset);
+                nodeRenderer.Refresh(node);
 
                 RectTransform nodeRectTransform = nodeRenderer.transform as RectTransform;
-
                 if (containerRectTransform && nodeRectTransform)
                 {
                     nodeRectTransform.anchoredPosition = canvas.WorldToAnchoredPoint(containerRectTransform, node.Position);
@@ -63,9 +64,8 @@ namespace HHG.NodeMap.Runtime
 
             foreach (Connection connection in map.Connections)
             {
-                LineRenderer lineRenderer = Instantiate(connectionPrefab, connectionContainer);
-                lineRenderer.positionCount = 2;
-                lineRenderer.SetPositions(new Vector3[] { connection.Source.Position, connection.Destination.Position });
+                ConnectionRenderer connectionRenderer = Instantiate(connectionPrefab, connectionContainer);
+                connectionRenderer.Refresh(connection);
             }
         }
 
@@ -94,5 +94,9 @@ namespace HHG.NodeMap.Runtime
                 Gizmos.DrawLine(connection.Source.Position, connection.Destination.Position);
             }
         }
+
+        [ContextMenu("Generate Map Test")] private void GenerateMapTest() => PerformanceUtil.MeasureDuration("Generation time", () => GenerateMap());
+        [ContextMenu("Generate 100 Maps Test")] private void Generate100MapsTest() => PerformanceUtil.MeasureAverageDuration("Average generation time", () => GenerateMap(), 100);
+        [ContextMenu("Generate 1000 Maps Test")] private void Generate1000MapsTest() => PerformanceUtil.MeasureAverageDuration("Average generation time", () => GenerateMap(), 1000);
     }
 }

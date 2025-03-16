@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 7284f963ea0ab47418f3d0b9427c4b5f
+guid: 51e63a82fc425ce4fabe5ae1ee30c497
 ScriptedImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -71,7 +71,7 @@ ScriptedImporter:
     textureFormatSet: 0
     applyGammaDecoding: 0
   spriteImportData:
-  - name: Stairs_1
+  - name: Dungeon Wall_1
     originalName: 
     pivot: {x: 0.5, y: 0.5}
     alignment: 0
@@ -80,8 +80,8 @@ ScriptedImporter:
       serializedVersion: 2
       x: 0
       y: 0
-      width: 64
-      height: 64
+      width: 256
+      height: 256
     spriteID: 408e3a9ca6683e248ab18ae5ada45502
     spriteBone: []
     spriteOutline: []

@@ -1,6 +1,9 @@
 using HHG.Common.Runtime;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace HHG.NodeMap.Runtime
@@ -15,69 +18,75 @@ namespace HHG.NodeMap.Runtime
 
         public static NodeMap Generate(NodeMapSettings settings, NodeSettings nodeSettings)
         {
-            if (algorithms.TryGetValue(settings.Algorithm, out var algorithm))
+            if (!algorithms.TryGetValue(settings.Algorithm, out var algorithm))
             {
-                int minNodeCount = settings.MinNodeCount;
-                int maxNodeCount = settings.MaxNodeCount;
-                
-                NodeMap nodeMap = null;
-                NodeMap tempMap = null;
-
-                bool done = false;
-
-                do
-                {
-                    for (int i = 0; i < 10; i++)
-                    {
-                        nodeMap = algorithm.Generate(settings);
-
-                        for (int j = 0; j < 10; j++)
-                        {
-                            tempMap = Helper(nodeMap, settings);
-
-                            if (tempMap.Nodes.Count > minNodeCount && tempMap.Nodes.Count < maxNodeCount)
-                            {
-                                done = true;
-                                break;
-                            }
-                        }
-
-                        if (done)
-                        {
-                            break;
-                        }
-                    }
-
-                    if (done)
-                    {
-                        break;
-                    }
-
-                } while (minNodeCount-- > 3);
-
-                if (!done)
-                {
-                    throw new System.ArgumentException($"Settings failed to generate a valid node map: {settings.Algorithm}");
-                }
-
-                nodeMap = tempMap;
-
-                float randomNoise = settings.RandomNoise;
-
-                foreach (Node node in nodeMap.Nodes)
-                {
-                    node.Position += Random.insideUnitCircle * randomNoise;
-                }
-
-                AssignNodeAssets(nodeMap, nodeSettings);
-
-                return nodeMap;
+                throw new ArgumentException($"Unsupported algorithm: {settings.Algorithm}");
             }
 
-            throw new System.ArgumentException($"Unsupported algorithm: {settings.Algorithm}");
+            using var cts = new CancellationTokenSource();
+            var token = cts.Token;
+
+            // Run multiple tasks and block until one completes
+            var tasks = Enumerable.Range(0, Environment.ProcessorCount)
+                .Select(_ => Task.Run(() => GenerateMapUntilValid(settings, algorithm, token), token));
+
+            try
+            {
+                // Wait synchronously for the first task to complete
+                NodeMap result = Task.WhenAny(tasks).Result.Result;
+                cts.Cancel(); // Cancel remaining tasks
+
+                if (result != null)
+                {
+                    float randomNoise = settings.RandomNoise;
+                    foreach (Node node in result.Nodes)
+                    {
+                        node.Position += UnityEngine.Random.insideUnitCircle * randomNoise;
+                    }
+
+                    AssignNodeAssets(result, nodeSettings);
+                    return result;
+                }
+            }
+            catch (AggregateException ex) when (ex.InnerException is OperationCanceledException)
+            {
+                // Expected cancellation, ignore it
+            }
+
+            throw new ArgumentException($"Settings failed to generate a valid node map: {settings.Algorithm}");
         }
 
-        public static NodeMap Helper(NodeMap nodeMap, NodeMapSettings settings)
+        // Generator function that runs until a valid node map is found
+        private static NodeMap GenerateMapUntilValid(NodeMapSettings settings, IAlgorithm algorithm, CancellationToken token)
+        {
+            System.Random random = new();
+            int minNodeCount = settings.MinNodeCount;
+            int maxNodeCount = settings.MaxNodeCount;
+
+            while (minNodeCount-- > 3)
+            {
+                for (int i = 0; i < 10; i++)
+                {
+                    if (token.IsCancellationRequested) return null;
+
+                    NodeMap nodeMap = algorithm.Generate(settings);
+                    for (int j = 0; j < 10; j++)
+                    {
+                        if (token.IsCancellationRequested) return null;
+
+                        NodeMap tempMap = Helper(nodeMap, settings, random);
+                        if (tempMap.Nodes.Count > minNodeCount && tempMap.Nodes.Count < maxNodeCount)
+                        {
+                            return tempMap; // First valid map found
+                        }
+                    }
+                }
+            }
+
+            return null; // If no valid map is found
+        }
+
+        public static NodeMap Helper(NodeMap nodeMap, NodeMapSettings settings, System.Random random)
         {
             List<Node> path = new List<Node>();
             HashSet<Node> activePoints = new HashSet<Node>();
@@ -110,7 +119,7 @@ namespace HHG.NodeMap.Runtime
                         break;
                     }
 
-                    int randomIndex = Random.Range(1, path.Count - 2);
+                    int randomIndex = random.Next(1, path.Count - 2);
                     Node randomNode = path[randomIndex];
 
                     if (randomNode != null)
@@ -147,7 +156,7 @@ namespace HHG.NodeMap.Runtime
                     continue;
                 }
 
-                if (Random.value < removalChance)
+                if (random.NextDouble() < removalChance)
                 {
                     if (CountOutgoingConnections(tempMap, source) > 1 &&
                         CountIncomingConnections(tempMap, destination) > 1)

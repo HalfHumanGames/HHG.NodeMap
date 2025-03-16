@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 7284f963ea0ab47418f3d0b9427c4b5f
+guid: 63598ef165eec6340aa84a9c43bfe986
 ScriptedImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -71,7 +71,7 @@ ScriptedImporter:
     textureFormatSet: 0
     applyGammaDecoding: 0
   spriteImportData:
-  - name: Stairs_1
+  - name: Purple Smoke_1
     originalName: 
     pivot: {x: 0.5, y: 0.5}
     alignment: 0
@@ -80,8 +80,8 @@ ScriptedImporter:
       serializedVersion: 2
       x: 0
       y: 0
-      width: 64
-      height: 64
+      width: 660
+      height: 371
     spriteID: 408e3a9ca6683e248ab18ae5ada45502
     spriteBone: []
     spriteOutline: []

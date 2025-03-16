@@ -13,9 +13,9 @@ namespace HHG.NodeMap.Runtime
             button = GetComponent<Button>();
         }
 
-        public void Refresh(NodeAsset nodeAsset)
+        public void Refresh(Node node)
         {
-            button.image.sprite = nodeAsset.Sprite;
+            button.image.sprite = node.NodeAsset.Sprite;
         }
     }
 }
