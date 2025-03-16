@@ -6,14 +6,6 @@ namespace HHG.NodeMap.Runtime
     [System.Serializable]
     public class NodeSettings
     {
-        public IReadOnlyList<NodeInfo> NodeInfos => nodeInfos;
-
-        [SerializeField] private List<NodeInfo> nodeInfos = new List<NodeInfo>();
-    }
-
-    [System.Serializable]
-    public class NodeInfo
-    {
         public NodeAsset NodeAsset => nodeAsset;
         public int SelectionWeight => selectionWeight;
         public int MinCount => minCount;

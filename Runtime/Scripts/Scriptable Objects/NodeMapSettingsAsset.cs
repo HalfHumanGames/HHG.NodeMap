@@ -1,9 +1,11 @@
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace HHG.NodeMap.Runtime
 {
-    [System.Serializable]
-    public class NodeMapSettings
+    [CreateAssetMenu(fileName = "Node Map Settings", menuName = "HHG/Node Map System/Node Map Settings")]
+    public class NodeMapSettingsAsset : ScriptableObject
     {
         public Algorithm Algorithm => algorithm;
         public Vector2 StartPoint => startPoint;
@@ -22,6 +24,7 @@ namespace HHG.NodeMap.Runtime
         public float FilterDistance => filterDistance;
         public float RemovalChance => removalChance;
         public float RandomNoise => randomNoise;
+        public IReadOnlyList<NodeSettings> NodeSettings => nodeSettings;
 
         [SerializeField] private Algorithm algorithm;
         [SerializeField] private int iterations = 8;
@@ -40,7 +43,12 @@ namespace HHG.NodeMap.Runtime
         [SerializeField] private float filterDistance = 10f;
         [SerializeField] private float removalChance = .3f;
         [SerializeField] private float randomNoise = 0f;
+        [SerializeField, FormerlySerializedAs("nodeInfos")] private List<NodeSettings> nodeSettings = new List<NodeSettings>();
 
+        private bool isDirty;
+
+        public bool IsDirty() => isDirty;
+        public void MarkClean() => isDirty = false;
 
         // TODO: Possible to get weird errors, so need proper validation
         public void Validate()
@@ -60,6 +68,12 @@ namespace HHG.NodeMap.Runtime
 
             minDistance = Mathf.Max(minDistance, .1f);
             filterDistance = Mathf.Max(filterDistance, minDistance);
+        }
+
+        private void OnValidate()
+        {
+            Validate();
+            isDirty = true;
         }
     }
 }

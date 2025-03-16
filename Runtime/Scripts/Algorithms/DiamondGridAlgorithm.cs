@@ -6,7 +6,7 @@ namespace HHG.NodeMap.Runtime
 {
     public class DiamondGridAlgorithm : IAlgorithm
     {
-        public NodeMap Generate(NodeMapSettings settings)
+        public NodeMap Generate(NodeMapSettingsAsset settings)
         {
             NodeMap nodeMap = new NodeMap();
 

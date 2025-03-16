@@ -1,0 +1,92 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b75bbd71c7ba5884a881079450dd4335, type: 3}
+  m_Name: Node Map Settings
+  m_EditorClassIdentifier: 
+  algorithm: 0
+  iterations: 10
+  removalsPerIteration: 1
+  minNodeCount: 20
+  maxNodeCount: 100
+  startPoint: {x: 0, y: -4}
+  endPoint: {x: 0, y: 4}
+  samplingAreaMin: {x: -10, y: -10}
+  samplingAreaMax: {x: 10, y: 10}
+  size: 8
+  spacing: {x: 1, y: 1}
+  minDistance: 1
+  maxDistance: 3
+  angleFilter: 30
+  filterDistance: 4
+  removalChance: 0.5
+  randomNoise: 0
+  nodeSettings:
+  - nodeAsset: {fileID: 11400000, guid: 7cede443497ee584ea190fcd4952f026, type: 2}
+    selectionWeight: 1
+    minCount: 1
+    maxCount: 3
+    minDistanceFromStart: 3
+    maxDistanceFromStart: -1
+    minDistanceFromEnd: 2
+    maxDistanceFromEnd: -1
+    minDistanceFromSimilar: 3
+    maxDistanceFromSimilar: -1
+  - nodeAsset: {fileID: 11400000, guid: 4a4db8bbc7135a04e873e11f6e49f659, type: 2}
+    selectionWeight: 0
+    minCount: 1
+    maxCount: 1
+    minDistanceFromStart: 0
+    maxDistanceFromStart: 0
+    minDistanceFromEnd: -1
+    maxDistanceFromEnd: -1
+    minDistanceFromSimilar: -1
+    maxDistanceFromSimilar: -1
+  - nodeAsset: {fileID: 11400000, guid: 547ad5a4b54a00a448440bfce9488f8d, type: 2}
+    selectionWeight: 2
+    minCount: 3
+    maxCount: 6
+    minDistanceFromStart: 1
+    maxDistanceFromStart: -1
+    minDistanceFromEnd: 1
+    maxDistanceFromEnd: -1
+    minDistanceFromSimilar: 2
+    maxDistanceFromSimilar: -1
+  - nodeAsset: {fileID: 11400000, guid: 1bb2d6d4a59114e47a6ce50ae09ee3f2, type: 2}
+    selectionWeight: 3
+    minCount: -1
+    maxCount: -1
+    minDistanceFromStart: 1
+    maxDistanceFromStart: -1
+    minDistanceFromEnd: 1
+    maxDistanceFromEnd: -1
+    minDistanceFromSimilar: -1
+    maxDistanceFromSimilar: -1
+  - nodeAsset: {fileID: 11400000, guid: 43ed2d7720261d8409953a9d81d26649, type: 2}
+    selectionWeight: 0
+    minCount: 1
+    maxCount: 3
+    minDistanceFromStart: -1
+    maxDistanceFromStart: -1
+    minDistanceFromEnd: 0
+    maxDistanceFromEnd: 0
+    minDistanceFromSimilar: -1
+    maxDistanceFromSimilar: -1
+  - nodeAsset: {fileID: 11400000, guid: 0a3c0b130a5ff07488add07d83c35614, type: 2}
+    selectionWeight: 1
+    minCount: 1
+    maxCount: 3
+    minDistanceFromStart: 3
+    maxDistanceFromStart: -1
+    minDistanceFromEnd: 2
+    maxDistanceFromEnd: -1
+    minDistanceFromSimilar: 3
+    maxDistanceFromSimilar: -1

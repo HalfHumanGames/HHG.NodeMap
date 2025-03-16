@@ -16,8 +16,10 @@ namespace HHG.NodeMap.Runtime
             { Algorithm.DiamondGrid, new DiamondGridAlgorithm() }
         };
 
-        public static NodeMap Generate(NodeMapSettings settings, NodeSettings nodeSettings)
+        public static NodeMap Generate(NodeMapSettingsAsset settings)
         {
+            settings.Validate(); // Always validate first
+
             if (!algorithms.TryGetValue(settings.Algorithm, out var algorithm))
             {
                 throw new ArgumentException($"Unsupported algorithm: {settings.Algorithm}");
@@ -44,7 +46,7 @@ namespace HHG.NodeMap.Runtime
                         node.Position += UnityEngine.Random.insideUnitCircle * randomNoise;
                     }
 
-                    AssignNodeAssets(result, nodeSettings);
+                    AssignNodeAssets(result, settings);
                     return result;
                 }
             }
@@ -57,7 +59,7 @@ namespace HHG.NodeMap.Runtime
         }
 
         // Generator function that runs until a valid node map is found
-        private static NodeMap GenerateMapUntilValid(NodeMapSettings settings, IAlgorithm algorithm, CancellationToken token)
+        private static NodeMap GenerateMapUntilValid(NodeMapSettingsAsset settings, IAlgorithm algorithm, CancellationToken token)
         {
             System.Random random = new();
             int minNodeCount = settings.MinNodeCount;
@@ -86,7 +88,7 @@ namespace HHG.NodeMap.Runtime
             return null; // If no valid map is found
         }
 
-        public static NodeMap Helper(NodeMap nodeMap, NodeMapSettings settings, System.Random random)
+        public static NodeMap Helper(NodeMap nodeMap, NodeMapSettingsAsset settings, System.Random random)
         {
             List<Node> path = new List<Node>();
             HashSet<Node> activePoints = new HashSet<Node>();
@@ -256,15 +258,15 @@ namespace HHG.NodeMap.Runtime
             return -1;
         }
 
-        private static void AssignNodeAssets(NodeMap nodeMap, NodeSettings nodeSettings)
+        private static void AssignNodeAssets(NodeMap nodeMap, NodeMapSettingsAsset settings)
         {
-            if (nodeSettings.NodeInfos.Count == 0)
+            if (settings.NodeSettings.Count == 0)
             {
                 return;
             }
 
             int attempts = 100;
-            Dictionary<NodeInfo, int> nodeInfoCounts = new Dictionary<NodeInfo, int>();
+            Dictionary<NodeSettings, int> nodeInfoCounts = new Dictionary<NodeSettings, int>();
 
             do
             {
@@ -274,7 +276,7 @@ namespace HHG.NodeMap.Runtime
                 // Don't use ToDictionary since when add a new item to the list, it copies
                 // the last element in the list, which causes a duplicate key exception
 
-                foreach (NodeInfo nodeInfo in nodeSettings.NodeInfos)
+                foreach (NodeSettings nodeInfo in settings.NodeSettings)
                 {
                     nodeInfoCounts[nodeInfo] = 0;
                 }
@@ -283,7 +285,7 @@ namespace HHG.NodeMap.Runtime
 
                 foreach (Node node in nodeMap.Nodes)
                 {
-                    NodeInfo nodeInfo = nodeSettings.NodeInfos.Where((nodeInfo) => NodeMeetsNodeInfoRequirements(nodeMap, node, nodeInfo, nodeInfoCounts)).SelectByWeight(nodeInfo => nodeInfo.SelectionWeight);
+                    NodeSettings nodeInfo = settings.NodeSettings.Where((nodeInfo) => NodeMeetsNodeInfoRequirements(nodeMap, node, nodeInfo, nodeInfoCounts)).SelectByWeight(nodeInfo => nodeInfo.SelectionWeight);
 
                     if (nodeInfo != null)
                     {
@@ -308,7 +310,7 @@ namespace HHG.NodeMap.Runtime
             }
         }
 
-        private static bool NodeMeetsNodeInfoRequirements(NodeMap nodeMap, Node node, NodeInfo nodeInfo, Dictionary<NodeInfo, int> nodeCounts)
+        private static bool NodeMeetsNodeInfoRequirements(NodeMap nodeMap, Node node, NodeSettings nodeInfo, Dictionary<NodeSettings, int> nodeCounts)
         {
             if (nodeInfo.MaxCount != -1 && nodeCounts[nodeInfo] >= nodeInfo.MaxCount)
             {

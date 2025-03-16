@@ -10,8 +10,7 @@ namespace HHG.NodeMap.Runtime
         [SerializeField] private Transform connectionContainer;
         [SerializeField] private NodeRenderer nodePrefab;
         [SerializeField] private ConnectionRenderer connectionPrefab;
-        [SerializeField] private NodeMapSettings settings = new NodeMapSettings();
-        [SerializeField] private NodeSettings nodeSettings = new NodeSettings();
+        [SerializeField] private NodeMapSettingsAsset nodeMapSettings;
 
         private NodeMap map;
         private bool hasStarted;
@@ -38,34 +37,40 @@ namespace HHG.NodeMap.Runtime
 
         private void GenerateMap()
         {
-            settings.Validate();
-            map = NodeMapGenerator.Generate(settings, nodeSettings);
+            if (nodeMapSettings != null)
+            {
+                nodeMapSettings.Validate();
+                map = NodeMapGenerator.Generate(nodeMapSettings);
+            }
         }
 
         private void RenderMap()
         {
-            nodeContainer.gameObject.DestroyChildren();
-            connectionContainer.gameObject.DestroyChildren();
-
-            RectTransform containerRectTransform = nodeContainer as RectTransform;
-            Canvas canvas = containerRectTransform != null ? containerRectTransform.GetComponentInParent<Canvas>(true) : null;
-
-            foreach (Node node in map.Nodes)
+            if (map != null)
             {
-                NodeRenderer nodeRenderer = Instantiate(nodePrefab, node.Position, Quaternion.identity, nodeContainer);
-                nodeRenderer.Refresh(node);
+                nodeContainer.gameObject.DestroyChildren();
+                connectionContainer.gameObject.DestroyChildren();
 
-                RectTransform nodeRectTransform = nodeRenderer.transform as RectTransform;
-                if (containerRectTransform && nodeRectTransform)
+                RectTransform containerRectTransform = nodeContainer as RectTransform;
+                Canvas canvas = containerRectTransform != null ? containerRectTransform.GetComponentInParent<Canvas>(true) : null;
+
+                foreach (Node node in map.Nodes)
                 {
-                    nodeRectTransform.anchoredPosition = canvas.WorldToAnchoredPoint(containerRectTransform, node.Position);
-                }
-            }
+                    NodeRenderer nodeRenderer = Instantiate(nodePrefab, node.Position, Quaternion.identity, nodeContainer);
+                    nodeRenderer.Refresh(node);
 
-            foreach (Connection connection in map.Connections)
-            {
-                ConnectionRenderer connectionRenderer = Instantiate(connectionPrefab, connectionContainer);
-                connectionRenderer.Refresh(connection);
+                    RectTransform nodeRectTransform = nodeRenderer.transform as RectTransform;
+                    if (containerRectTransform && nodeRectTransform)
+                    {
+                        nodeRectTransform.anchoredPosition = canvas.WorldToAnchoredPoint(containerRectTransform, node.Position);
+                    }
+                }
+
+                foreach (Connection connection in map.Connections)
+                {
+                    ConnectionRenderer connectionRenderer = Instantiate(connectionPrefab, connectionContainer);
+                    connectionRenderer.Refresh(connection);
+                }
             }
         }
 
@@ -76,22 +81,31 @@ namespace HHG.NodeMap.Runtime
 
         private void OnDrawGizmosSelected()
         {
+            if (nodeMapSettings != null && nodeMapSettings.IsDirty())
+            {
+                nodeMapSettings.MarkClean();
+                map = null; // Force regenerate
+            }
+
             if (map == null)
             {
                 GenerateMap();
             }
 
-            Gizmos.color = Color.red;
-            foreach (Node node in map.Nodes)
+            if (map != null)
             {
-                Gizmos.DrawWireSphere(node.Position, 0.2f);
-                Handles.Label(node.Position + Vector2.right * .25f, node.NodeAsset != null ? node.NodeAsset.name : string.Empty);
-            }
+                Gizmos.color = Color.red;
+                foreach (Node node in map.Nodes)
+                {
+                    Gizmos.DrawWireSphere(node.Position, 0.2f);
+                    Handles.Label(node.Position + Vector2.right * .25f, node.NodeAsset != null ? node.NodeAsset.name : string.Empty);
+                }
 
-            Gizmos.color = Color.green;
-            foreach (Connection connection in map.Connections)
-            {
-                Gizmos.DrawLine(connection.Source.Position, connection.Destination.Position);
+                Gizmos.color = Color.green;
+                foreach (Connection connection in map.Connections)
+                {
+                    Gizmos.DrawLine(connection.Source.Position, connection.Destination.Position);
+                }
             }
         }
 
