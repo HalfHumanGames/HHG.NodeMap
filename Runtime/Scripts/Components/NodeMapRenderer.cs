@@ -39,7 +39,6 @@ namespace HHG.NodeMap.Runtime
         {
             if (nodeMapSettings != null)
             {
-                nodeMapSettings.Validate();
                 map = NodeMapGenerator.Generate(nodeMapSettings);
             }
         }
