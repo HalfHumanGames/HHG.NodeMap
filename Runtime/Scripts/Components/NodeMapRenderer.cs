@@ -1,5 +1,8 @@
 using HHG.Common.Runtime;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
+using UnityEditor.MemoryProfiler;
 using UnityEngine;
 
 namespace HHG.NodeMap.Runtime
@@ -12,7 +15,9 @@ namespace HHG.NodeMap.Runtime
         [SerializeField] private ConnectionRenderer connectionPrefab;
         [SerializeField] private NodeMapSettingsAsset nodeMapSettings;
 
-        private NodeMap map;
+        private NodeMap nodeMap;
+        private Dictionary<Node, NodeRenderer> nodeRenderers = new Dictionary<Node, NodeRenderer>();
+        private Dictionary<Connection, ConnectionRenderer> connectionRenderers = new Dictionary<Connection, ConnectionRenderer>();
         private bool hasStarted;
 
         private void OnEnable()
@@ -33,19 +38,20 @@ namespace HHG.NodeMap.Runtime
         {
             GenerateMap();
             RenderMap();
+            SetCurrentNode(nodeMap.Start);
         }
 
         private void GenerateMap()
         {
             if (nodeMapSettings != null)
             {
-                map = NodeMapGenerator.Generate(nodeMapSettings);
+                nodeMap = NodeMapGenerator.Generate(nodeMapSettings);
             }
         }
 
         private void RenderMap()
         {
-            if (map != null)
+            if (nodeMap != null)
             {
                 nodeContainer.gameObject.DestroyChildren();
                 connectionContainer.gameObject.DestroyChildren();
@@ -53,7 +59,7 @@ namespace HHG.NodeMap.Runtime
                 RectTransform containerRectTransform = nodeContainer as RectTransform;
                 Canvas canvas = containerRectTransform != null ? containerRectTransform.GetComponentInParent<Canvas>(true) : null;
 
-                foreach (Node node in map.Nodes)
+                foreach (Node node in nodeMap.Nodes)
                 {
                     NodeRenderer nodeRenderer = Instantiate(nodePrefab, node.Position, Quaternion.identity, nodeContainer);
                     nodeRenderer.Refresh(node);
@@ -63,14 +69,40 @@ namespace HHG.NodeMap.Runtime
                     {
                         nodeRectTransform.anchoredPosition = canvas.WorldToAnchoredPoint(containerRectTransform, node.Position);
                     }
+
+                    nodeRenderers[node] = nodeRenderer;
                 }
 
-                foreach (Connection connection in map.Connections)
+                foreach (Connection connection in nodeMap.Connections)
                 {
                     ConnectionRenderer connectionRenderer = Instantiate(connectionPrefab, connectionContainer);
                     connectionRenderer.Refresh(connection);
+
+                    connectionRenderers[connection] = connectionRenderer;
                 }
             }
+        }
+
+        private void SetCurrentNode(Node currentNode)
+        {
+            foreach (Node node in nodeMap.Nodes)
+            {
+                nodeRenderers[node].Refresh(node);
+            }
+
+            foreach (Connection connection in nodeMap.Connections)
+            {
+                connectionRenderers[connection].Refresh(connection);
+            }
+
+            nodeRenderers[currentNode].Refresh(currentNode, true);
+
+            foreach (Connection connection in nodeMap.Connections.Where(c => c.Source == currentNode))
+            {
+                Node node = connection.Destination;
+                nodeRenderers[node].Refresh(node, true);
+                connectionRenderers[connection].Refresh(connection, true);
+            }          
         }
 
         private void OnValidate()
@@ -83,25 +115,25 @@ namespace HHG.NodeMap.Runtime
             if (nodeMapSettings != null && nodeMapSettings.IsDirty())
             {
                 nodeMapSettings.MarkClean();
-                map = null; // Force regenerate
+                nodeMap = null; // Force regenerate
             }
 
-            if (map == null)
+            if (nodeMap == null)
             {
                 GenerateMap();
             }
 
-            if (map != null)
+            if (nodeMap != null)
             {
                 Gizmos.color = Color.red;
-                foreach (Node node in map.Nodes)
+                foreach (Node node in nodeMap.Nodes)
                 {
                     Gizmos.DrawWireSphere(node.Position, 0.2f);
-                    Handles.Label(node.Position + Vector2.right * .25f, node.NodeAsset != null ? node.NodeAsset.name : string.Empty);
+                    Handles.Label(node.Position + Vector2.right * .25f, node.NodeAsset != null ? node.NodeAsset.Asset.name : string.Empty);
                 }
 
                 Gizmos.color = Color.green;
-                foreach (Connection connection in map.Connections)
+                foreach (Connection connection in nodeMap.Connections)
                 {
                     Gizmos.DrawLine(connection.Source.Position, connection.Destination.Position);
                 }
@@ -111,5 +143,10 @@ namespace HHG.NodeMap.Runtime
         [ContextMenu("Generate Map Test")] private void GenerateMapTest() => PerformanceUtil.MeasureDuration("Generation time", () => GenerateMap());
         [ContextMenu("Generate 100 Maps Test")] private void Generate100MapsTest() => PerformanceUtil.MeasureAverageDuration("Average generation time", () => GenerateMap(), 100);
         [ContextMenu("Generate 1000 Maps Test")] private void Generate1000MapsTest() => PerformanceUtil.MeasureAverageDuration("Average generation time", () => GenerateMap(), 1000);
+
+        private string json = string.Empty;
+
+        [ContextMenu("Save Map Test")] private void SaveMapTest() => json = nodeMap.ToJson();
+        [ContextMenu("Load Map Test")] private void LoadMapTest() => nodeMap.FromJsonOverwrite(json);
     }
 }

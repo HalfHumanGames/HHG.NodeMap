@@ -13,9 +13,10 @@ namespace HHG.NodeMap.Runtime
             button = GetComponent<Button>();
         }
 
-        public void Refresh(Node node)
+        public void Refresh(Node node, bool interactable = false)
         {
-            button.image.sprite = node.NodeAsset.Sprite;
+            button.image.sprite = node.NodeAsset.Asset.Sprite;
+            button.interactable = interactable;
         }
     }
 }

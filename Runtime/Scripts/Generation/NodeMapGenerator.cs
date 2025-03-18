@@ -1,5 +1,4 @@
 using HHG.Common.Runtime;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -22,14 +21,14 @@ namespace HHG.NodeMap.Runtime
 
             if (!algorithms.TryGetValue(settings.Algorithm, out var algorithm))
             {
-                throw new ArgumentException($"Unsupported algorithm: {settings.Algorithm}");
+                throw new System.ArgumentException($"Unsupported algorithm: {settings.Algorithm}");
             }
 
             using var cts = new CancellationTokenSource();
             var token = cts.Token;
 
             // Run multiple tasks and block until one completes
-            var tasks = Enumerable.Range(0, Environment.ProcessorCount)
+            var tasks = Enumerable.Range(0, System.Environment.ProcessorCount)
                 .Select(_ => Task.Run(() => GenerateMapUntilValid(settings, algorithm, token), token));
 
             try
@@ -43,19 +42,19 @@ namespace HHG.NodeMap.Runtime
                     float randomNoise = settings.RandomNoise;
                     foreach (Node node in result.Nodes)
                     {
-                        node.Position += UnityEngine.Random.insideUnitCircle * randomNoise;
+                        node.Position += Random.insideUnitCircle * randomNoise;
                     }
 
                     AssignNodeAssets(result, settings);
                     return result;
                 }
             }
-            catch (AggregateException ex) when (ex.InnerException is OperationCanceledException)
+            catch (System.AggregateException ex) when (ex.InnerException is System.OperationCanceledException)
             {
                 // Expected cancellation, ignore it
             }
 
-            throw new ArgumentException($"Settings failed to generate a valid node map: {settings.Algorithm}");
+            throw new System.ArgumentException($"Settings failed to generate a valid node map: {settings.Algorithm}");
         }
 
         // Generator function that runs until a valid node map is found

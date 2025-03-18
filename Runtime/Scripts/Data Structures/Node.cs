@@ -1,3 +1,4 @@
+using HHG.Common.Runtime;
 using UnityEngine;
 
 namespace HHG.NodeMap.Runtime
@@ -6,6 +7,6 @@ namespace HHG.NodeMap.Runtime
     public class Node
     {
         public Vector2 Position;
-        public NodeAsset NodeAsset;
+        public SerializedAsset<NodeAsset> NodeAsset;
     }
 }

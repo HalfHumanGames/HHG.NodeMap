@@ -11,9 +11,11 @@ namespace HHG.NodeMap.Runtime
             lineRenderer = GetComponent<LineRenderer>();
         }
 
-        public void Refresh(Connection connection)
+        public void Refresh(Connection connection, bool interactable = false)
         {
             lineRenderer.positionCount = 2;
+            lineRenderer.startColor = interactable ? Color.white : Color.black;
+            lineRenderer.endColor = interactable ? Color.white : Color.black;
             lineRenderer.SetPositions(new Vector3[] { connection.Source.Position, connection.Destination.Position });
 
             if (connection.Source.Position.x < connection.Destination.Position.x)
