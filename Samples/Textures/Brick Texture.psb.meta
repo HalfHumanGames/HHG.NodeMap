@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 63598ef165eec6340aa84a9c43bfe986
+guid: 51e63a82fc425ce4fabe5ae1ee30c497
 ScriptedImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -71,7 +71,7 @@ ScriptedImporter:
     textureFormatSet: 0
     applyGammaDecoding: 0
   spriteImportData:
-  - name: Purple Smoke_1
+  - name: Brick Texture_1
     originalName: 
     pivot: {x: 0.5, y: 0.5}
     alignment: 0
@@ -80,8 +80,8 @@ ScriptedImporter:
       serializedVersion: 2
       x: 0
       y: 0
-      width: 660
-      height: 371
+      width: 256
+      height: 256
     spriteID: 408e3a9ca6683e248ab18ae5ada45502
     spriteBone: []
     spriteOutline: []

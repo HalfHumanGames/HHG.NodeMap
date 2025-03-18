@@ -71,7 +71,7 @@ ScriptedImporter:
     textureFormatSet: 0
     applyGammaDecoding: 0
   spriteImportData:
-  - name: Stairs_1
+  - name: Stairs Texture_1
     originalName: 
     pivot: {x: 0.5, y: 0.5}
     alignment: 0
