@@ -1,3 +1,4 @@
+using HHG.Common.Runtime;
 using UnityEngine;
 
 namespace HHG.NodeMap.Runtime
@@ -6,7 +7,9 @@ namespace HHG.NodeMap.Runtime
     public class NodeAsset : ScriptableObject
     {
         public Sprite Sprite => sprite;
+        public ActionEvent OnClick => onClick;
 
         [SerializeField] private Sprite sprite;
+        [SerializeField] private ActionEvent onClick;
     }
 }

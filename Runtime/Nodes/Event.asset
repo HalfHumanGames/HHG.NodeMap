@@ -13,3 +13,13 @@ MonoBehaviour:
   m_Name: Event
   m_EditorClassIdentifier: 
   sprite: {fileID: 21300000, guid: a060034a69fc1324c9852e7403d98777, type: 3}
+  onClick:
+    actions:
+    - rid: 8327615733633908737
+  references:
+    version: 2
+    RefIds:
+    - rid: 8327615733633908737
+      type: {class: ActionDebugLog, ns: HHG.Common.Runtime, asm: HHG.Common.Runtime}
+      data:
+        message: Event
