@@ -31,7 +31,7 @@ MonoBehaviour:
   randomNoise: 0
   nodeSettings:
   - nodeAsset: {fileID: 11400000, guid: 7cede443497ee584ea190fcd4952f026, type: 2}
-    selectionWeight: 1
+    selectionWeight: 3
     minCount: 1
     maxCount: 3
     minDistanceFromStart: 3
@@ -81,6 +81,26 @@ MonoBehaviour:
     minDistanceFromSimilar: -1
     maxDistanceFromSimilar: -1
   - nodeAsset: {fileID: 11400000, guid: 0a3c0b130a5ff07488add07d83c35614, type: 2}
+    selectionWeight: 1
+    minCount: 1
+    maxCount: 3
+    minDistanceFromStart: 3
+    maxDistanceFromStart: -1
+    minDistanceFromEnd: 2
+    maxDistanceFromEnd: -1
+    minDistanceFromSimilar: 3
+    maxDistanceFromSimilar: -1
+  - nodeAsset: {fileID: 11400000, guid: aa192d3d7173bb6409af00ad4bd43826, type: 2}
+    selectionWeight: 2
+    minCount: 1
+    maxCount: 3
+    minDistanceFromStart: 3
+    maxDistanceFromStart: -1
+    minDistanceFromEnd: 2
+    maxDistanceFromEnd: -1
+    minDistanceFromSimilar: 3
+    maxDistanceFromSimilar: -1
+  - nodeAsset: {fileID: 11400000, guid: 00c44b9859e9bf84fabeccebc1e51bc3, type: 2}
     selectionWeight: 1
     minCount: 1
     maxCount: 3
