@@ -15,7 +15,7 @@ namespace HHG.NodeMap.Runtime
             { Algorithm.DiamondGrid, new DiamondGridAlgorithm() }
         };
 
-        public static async Task<NodeMap> Generate(NodeMapSettingsAsset settings)
+        public static async Task<NodeMap> Generate(NodeMapSettingsAsset settings, int seed = -1)
         {
             settings.Validate(); // Always validate first
 
@@ -24,43 +24,60 @@ namespace HHG.NodeMap.Runtime
                 throw new System.ArgumentException($"Unsupported algorithm: {settings.Algorithm}");
             }
 
-            using var cancellationTokenSource = new CancellationTokenSource();
-            var token = cancellationTokenSource.Token;
+            using CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+            CancellationToken token = cancellationTokenSource.Token;
 
-            // Run multiple tasks and block until one completes
-            var tasks = Enumerable.Range(0, System.Environment.ProcessorCount).
-                Select(_ => Task.Run(() => GenerateMapUntilValid(settings, algorithm, token), token));
+            NodeMap result = null;
 
             try
             {
-                // Wait synchronously for the first task to complete
-                NodeMap result = await Task.WhenAny(tasks).Result;
-                cancellationTokenSource.Cancel(); // Cancel remaining tasks
+                if (seed == -1)
+                {
+                    // Run multiple tasks asynchronously and in parallel for best performance
+                    List<Task<NodeMap>> tasks = new List<Task<NodeMap>>();
+                    for (int i = 0; i < System.Environment.ProcessorCount; i++)
+                    {
+                        seed = System.Environment.TickCount + i;
+                        System.Random random = new System.Random(seed);
+                        tasks.Add(Task.Run(() => GenerateMapUntilValid(settings, algorithm, token, random, seed), token));
+                    }
+
+                    // Wait synchronously for the first task to complete
+                    result = await Task.WhenAny(tasks).Result;
+                    cancellationTokenSource.Cancel(); // Cancel remaining tasks
+                }
+                else
+                {
+                    System.Random random = new System.Random(seed);
+                    Random.InitState(seed);
+                    result = GenerateMapUntilValid(settings, algorithm, token, random, seed);
+                }
 
                 if (result != null)
                 {
+                    System.Random random = new System.Random(result.Seed);
+                    Random.InitState(result.Seed);
+
                     float randomNoise = settings.RandomNoise;
                     foreach (Node node in result.Nodes)
                     {
                         node.LocalPosition += Random.insideUnitCircle * randomNoise;
                     }
 
-                    AssignNodeAssets(result, settings);
-                    return result;
+                    AssignNodeAssets(result, settings, random);
                 }
             }
             catch (System.AggregateException ex) when (ex.InnerException is System.OperationCanceledException)
             {
-                // Expected cancellation, ignore it
+                // Expected cancellation that is safe to ignore
             }
 
-            throw new System.ArgumentException($"Settings failed to generate a valid node map: {settings.Algorithm}");
+            return result;
         }
 
         // Generator function that runs until a valid node map is found
-        private static NodeMap GenerateMapUntilValid(NodeMapSettingsAsset settings, IAlgorithm algorithm, CancellationToken token)
+        private static NodeMap GenerateMapUntilValid(NodeMapSettingsAsset settings, IAlgorithm algorithm, CancellationToken token, System.Random random, int seed)
         {
-            System.Random random = new();
             int minNodeCount = settings.MinNodeCount;
             int maxNodeCount = settings.MaxNodeCount;
 
@@ -70,7 +87,7 @@ namespace HHG.NodeMap.Runtime
                 {
                     if (token.IsCancellationRequested) return null;
 
-                    NodeMap nodeMap = algorithm.Generate(settings);
+                    NodeMap nodeMap = algorithm.Generate(settings, random);
                     for (int j = 0; j < 10; j++)
                     {
                         if (token.IsCancellationRequested) return null;
@@ -78,13 +95,14 @@ namespace HHG.NodeMap.Runtime
                         NodeMap tempMap = Helper(nodeMap, settings, random);
                         if (tempMap.Nodes.Count > minNodeCount && tempMap.Nodes.Count < maxNodeCount)
                         {
-                            return tempMap; // First valid map found
+                            tempMap.Seed = seed;
+                            return tempMap; // Valid map found
                         }
                     }
                 }
             }
 
-            return null; // If no valid map is found
+            return null; // No valid map found
         }
 
         public static NodeMap Helper(NodeMap nodeMap, NodeMapSettingsAsset settings, System.Random random)
@@ -140,7 +158,7 @@ namespace HHG.NodeMap.Runtime
             connections.Clear();
             connections.AddRange(nodeMap.Connections);
             connections.RemoveAll(c => !nodes.Contains(c.Source) || !nodes.Contains(c.Destination));
-            connections.Shuffle();
+            connections.Shuffle(random);
 
             int connectionCount = connections.Count;
             float removalChance = settings.RemovalChance;
@@ -191,7 +209,6 @@ namespace HHG.NodeMap.Runtime
             return GetDistance(nodeMap, nodeMap.End, node);
         }
 
-        // Pass NodeAsset as a parameter since node.NodeAsset has not yet been assigned
         public static int GetDistanceFromSimilar(NodeMap nodeMap, Node node, NodeAsset nodeAsset)
         {
             int minDistance = -1;
@@ -257,7 +274,7 @@ namespace HHG.NodeMap.Runtime
             return -1;
         }
 
-        private static void AssignNodeAssets(NodeMap nodeMap, NodeMapSettingsAsset settings)
+        private static void AssignNodeAssets(NodeMap nodeMap, NodeMapSettingsAsset settings, System.Random random)
         {
             if (settings.NodeSettings.Count == 0)
             {
@@ -274,17 +291,16 @@ namespace HHG.NodeMap.Runtime
 
                 // Don't use ToDictionary since when add a new item to the list, it copies
                 // the last element in the list, which causes a duplicate key exception
-
                 foreach (NodeSettings nodeInfo in settings.NodeSettings)
                 {
                     nodeInfoCounts[nodeInfo] = 0;
                 }
 
-                nodeMap.Nodes.Shuffle();
-
+                nodeMap.Nodes.Shuffle(random);
+                
                 foreach (Node node in nodeMap.Nodes)
                 {
-                    NodeSettings nodeInfo = settings.NodeSettings.Where((nodeInfo) => NodeMeetsNodeInfoRequirements(nodeMap, node, nodeInfo, nodeInfoCounts)).SelectByWeight(nodeInfo => nodeInfo.SelectionWeight);
+                    NodeSettings nodeInfo = settings.NodeSettings.Where((nodeInfo) => NodeMeetsNodeInfoRequirements(nodeMap, node, nodeInfo, nodeInfoCounts)).SelectByWeight(nodeInfo => nodeInfo.SelectionWeight, random);
 
                     if (nodeInfo != null)
                     {
@@ -318,7 +334,7 @@ namespace HHG.NodeMap.Runtime
 
             int distanceFromStart = GetDistanceFromStart(nodeMap, node);
             int distanceFromEnd = GetDistanceFromEnd(nodeMap, node);
-            int distanceFromSimilar = GetDistanceFromSimilar(nodeMap, node, nodeInfo.NodeAsset);
+            int distanceFromSimilar = GetDistanceFromSimilar(nodeMap, node, nodeInfo.NodeAsset); // Pass nodeInfo.NodeAsset since node.NodeAsset has not yet been assigned
 
             return (distanceFromStart == -1 || nodeInfo.MaxDistanceFromStart == -1 || distanceFromStart <= nodeInfo.MaxDistanceFromStart) &&
                    (distanceFromStart == -1 || nodeInfo.MinDistanceFromStart == -1 || distanceFromStart >= nodeInfo.MinDistanceFromStart) &&

@@ -10,7 +10,9 @@ namespace HHG.NodeMap.Runtime
     public class NodeMapRenderer : MonoBehaviour
     {
         [SerializeField] private bool alwaysDrawGizmos;
-        [SerializeField] private Transform transformSource;
+        [SerializeField] private bool useSeed;
+        [SerializeField] private int seed = -1;
+        [SerializeField] private Transform transformationSource;
         [SerializeField] private NodeRenderer nodePrefab;
         [SerializeField] private ConnectionRenderer connectionPrefab;
         [SerializeField] private NodeMapSettingsAsset nodeMapSettings;
@@ -18,23 +20,10 @@ namespace HHG.NodeMap.Runtime
         private NodeMap nodeMap;
         private Dictionary<Node, NodeRenderer> nodeRenderers = new Dictionary<Node, NodeRenderer>();
         private Dictionary<Connection, ConnectionRenderer> connectionRenderers = new Dictionary<Connection, ConnectionRenderer>();
-        private Vector3 sourcePosition;
-        private Quaternion sourceRotation;
-        private Vector3 sourceScale;
-        private bool hasStarted;
 
         private async void OnEnable()
         {
-            if (hasStarted)
-            {
-                await GenerateAndRenderMapAsync();
-            }
-        }
-
-        private async void Start()
-        {
             await GenerateAndRenderMapAsync();
-            hasStarted = true;
         }
 
         private async Task GenerateAndRenderMapAsync()
@@ -49,22 +38,22 @@ namespace HHG.NodeMap.Runtime
         {
             if (nodeMapSettings != null)
             {
-                nodeMap = await NodeMapGenerator.Generate(nodeMapSettings);
-                RealignMap();
-                
+                nodeMap = await NodeMapGenerator.Generate(nodeMapSettings, useSeed ? seed : -1);
+                seed = nodeMap.Seed;
+                ApplyMapTransformations();
             }
         }
 
-        private void RealignMap()
+        private void ApplyMapTransformations()
         {
-            if (transformSource != null)
+            if (transformationSource != null)
             {
-                Vector3 center = ComputeCenter(nodeMap.Nodes.Select(n => n.LocalPosition.ToVector3()).ToArray());
+                Vector3 center = ComputeCenter(nodeMap.Nodes.Select(n => n.LocalPosition.ToVector3()));
 
                 Matrix4x4 matrix = Matrix4x4.TRS(
-                    transformSource.position,
-                    transformSource.rotation,
-                    transformSource.localScale
+                    transformationSource.position,
+                    transformationSource.rotation,
+                    transformationSource.localScale
                 );
 
                 foreach (Node node in nodeMap.Nodes)
@@ -75,13 +64,18 @@ namespace HHG.NodeMap.Runtime
             }
         }
 
-        public static Vector3 ComputeCenter(Vector3[] points)
+        public static Vector3 ComputeCenter(IEnumerable<Vector3> points)
         {
+            int count = 0;
             Vector3 sum = Vector3.zero;
-            foreach (var p in points)
-                sum += p;
 
-            return sum / points.Length;
+            foreach (Vector3 point in points)
+            {
+                sum += point;
+                count++;
+            }
+
+            return sum / count;
         }
 
 
@@ -161,14 +155,10 @@ namespace HHG.NodeMap.Runtime
                 await GenerateMapAsync();
             }
 
-            if (transformSource.position != sourcePosition ||
-                transformSource.rotation != sourceRotation||
-                transformSource.lossyScale != sourceScale)
+            if (transformationSource.hasChanged)
             {
-                sourcePosition = transformSource.position;
-                sourceRotation = transformSource.rotation;
-                sourceScale = transformSource.lossyScale;
-                RealignMap();
+                transformationSource.hasChanged = false;
+                ApplyMapTransformations();
             }
 
             if (nodeMap != null)
@@ -188,13 +178,12 @@ namespace HHG.NodeMap.Runtime
             }
         }
 
-        [ContextMenu("Generate Map Test")] private void GenerateMapTest() => PerformanceUtil.MeasureDuration("Generation time", () => GenerateMapAsync().Wait());
-        [ContextMenu("Generate 100 Maps Test")] private void Generate100MapsTest() => PerformanceUtil.MeasureAverageDuration("Average generation time", () => GenerateMapAsync().Wait(), 100);
-        [ContextMenu("Generate 1000 Maps Test")] private void Generate1000MapsTest() => PerformanceUtil.MeasureAverageDuration("Average generation time", () => GenerateMapAsync().Wait(), 1000);
-
         private string json = string.Empty;
 
-        [ContextMenu("Save Map Test")] private void SaveMapTest() => json = nodeMap.ToJson();
-        [ContextMenu("Load Map Test")] private void LoadMapTest() => nodeMap.FromJsonOverwrite(json);
+        [ContextMenu("Test/Generate Map")] private void TestGenerateMap() => PerformanceUtil.MeasureDuration("Generation time", () => GenerateMapAsync().Wait());
+        [ContextMenu("Test/Generate 100 Maps")] private void TestGenerate100Maps() => PerformanceUtil.MeasureAverageDuration("Average generation time", () => GenerateMapAsync().Wait(), 100);
+        [ContextMenu("Test/Generate 1000 Maps")] private void TestGenerate1000Maps() => PerformanceUtil.MeasureAverageDuration("Average generation time", () => GenerateMapAsync().Wait(), 1000);
+        [ContextMenu("Test/Save Map")] private void TestSaveMap() => json = nodeMap.ToJson();
+        [ContextMenu("Test/Load Map")] private void TestLoadMap() => nodeMap.FromJsonOverwrite(json);
     }
 }

@@ -6,6 +6,7 @@ namespace HHG.NodeMap.Runtime
     [System.Serializable]
     public class NodeMap : ICloneable<NodeMap>
     {
+        public int Seed;
         public Node Start;
         public Node End;
         public List<Node> Nodes = new List<Node>();

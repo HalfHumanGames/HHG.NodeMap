@@ -6,7 +6,7 @@ namespace HHG.NodeMap.Runtime
 {
     public class DiamondGridAlgorithm : IAlgorithm
     {
-        public NodeMap Generate(NodeMapSettingsAsset settings)
+        public NodeMap Generate(NodeMapSettingsAsset settings, System.Random random)
         {
             NodeMap nodeMap = new NodeMap();
 
@@ -17,7 +17,7 @@ namespace HHG.NodeMap.Runtime
             float spacingY = settings.Spacing.y;
             float filterDistance = settings.FilterDistance;
 
-            List<Vector2> points = new List<Vector2>();
+            List<Vector2> points = new();
             for (int y = 0; y < size; y++)
             {
                 for (int x = 0; x < size; x++)
@@ -26,7 +26,7 @@ namespace HHG.NodeMap.Runtime
                 }
             }
 
-            List<Vector2> rotatedPoints = new List<Vector2>();
+            List<Vector2> rotatedPoints = new();
             foreach (Vector2 point in points)
             {
                 float rotatedX = (point.x - point.y) * cos45;
@@ -42,8 +42,7 @@ namespace HHG.NodeMap.Runtime
 
             Vector2 bottommostPoint = rotatedPoints.OrderBy(p => p.y).First();
             Vector2 translation = settings.StartPoint - bottommostPoint;
-            List<Vector2> translatedPoints = rotatedPoints.Select(p => p + translation).ToList();
-
+            List<Vector2> translatedPoints = new(rotatedPoints.Select(p => p + translation));
             foreach (Vector2 point in translatedPoints)
             {
                 Node node = new Node { LocalPosition = point };

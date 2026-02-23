@@ -7,7 +7,7 @@ namespace HHG.NodeMap.Runtime
 {
     public class PoissonDiskAlgorithm : IAlgorithm
     {
-        public NodeMap Generate(NodeMapSettingsAsset settings)
+        public NodeMap Generate(NodeMapSettingsAsset settings, System.Random random)
         {
             NodeMap nodeMap = new NodeMap();
 
@@ -21,10 +21,14 @@ namespace HHG.NodeMap.Runtime
             float filterDistance = settings.FilterDistance;
             float angleFilter = settings.AngleFilter;
 
-            List<Vector2> points = PoissonDiskSampling.Sampling(samplingAreaMin, samplingAreaMax, minDistance);
-
+            List<Vector2> points = PoissonDiskSampling.Sampling(samplingAreaMin, samplingAreaMax, minDistance, random);
             Vector2 center = (samplingAreaMin + samplingAreaMax) / 2;
-            points = points.Where(p => Vector2.Distance(p, center) <= filterDistance && Vector2.Distance(p, startPoint) > minDistance && Vector2.Distance(p, endPoint) > minDistance).ToList();
+
+            points.RemoveAll(p =>
+                Vector2.Distance(p, center) > filterDistance ||
+                Vector2.Distance(p, startPoint) <= minDistance ||
+                Vector2.Distance(p, endPoint) <= minDistance);
+           
             points.Add(startPoint);
             points.Add(endPoint);
 
