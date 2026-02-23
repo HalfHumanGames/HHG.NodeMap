@@ -13,7 +13,10 @@ MonoBehaviour:
   m_Name: Node Map Settings
   m_EditorClassIdentifier: 
   algorithm: 0
-  nodeCount: {x: 20, y: 100}
+  startPoint: {x: 0, y: -4}
+  endPoint: {x: 0, y: 4}
+  samplingArea: {x: 6, y: 9}
+  nodeCount: {x: 20, y: 30}
   distance: {x: 1, y: 3}
   spacing: {x: 1, y: 1}
   iterations: 10
@@ -22,10 +25,6 @@ MonoBehaviour:
   distanceFilter: 4
   angleFilter: 20
   randomNoise: 0
-  startPoint: {x: 0, y: -4}
-  endPoint: {x: 0, y: 4}
-  samplingAreaMin: {x: -10, y: -10}
-  samplingAreaMax: {x: 10, y: 10}
   size: 8
   nodeAssets:
   - {fileID: 11400000, guid: 7cede443497ee584ea190fcd4952f026, type: 2}

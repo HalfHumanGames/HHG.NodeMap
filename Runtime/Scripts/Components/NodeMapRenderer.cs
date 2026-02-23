@@ -2,16 +2,20 @@ using HHG.Common.Runtime;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 using UnityEngine;
 
 namespace HHG.NodeMap.Runtime
 {
     public class NodeMapRenderer : MonoBehaviour
     {
+        [EditorButton(nameof(GenerateAndRenderMapAsync), "Generate Map", PositionType = ButtonPositionType.Above)]
         [SerializeField] private bool alwaysDrawGizmos;
         [SerializeField] private bool useSeed;
         [SerializeField] private int seed = -1;
+        [SerializeField] private bool applyTransformation;
         [SerializeField] private Transform transformationSource;
         [SerializeField] private NodeRenderer nodePrefab;
         [SerializeField] private ConnectionRenderer connectionPrefab;
@@ -20,6 +24,9 @@ namespace HHG.NodeMap.Runtime
         private NodeMap nodeMap;
         private Dictionary<Node, NodeRenderer> nodeRenderers = new Dictionary<Node, NodeRenderer>();
         private Dictionary<Connection, ConnectionRenderer> connectionRenderers = new Dictionary<Connection, ConnectionRenderer>();
+        private Vector3 transformationCenter;
+        private Matrix4x4 transformationMatrix;
+        private bool invalidSettings = false;
 
         private async void OnEnable()
         {
@@ -29,46 +36,47 @@ namespace HHG.NodeMap.Runtime
         private async Task GenerateAndRenderMapAsync()
         {
             await GenerateMapAsync();
-            
-            if (nodeMap != null)
+
+            if (Application.isPlaying && nodeMap != null)
             {
                 RenderMap();
                 SetCurrentNode(nodeMap.Start);
             }
         }
 
-        [ContextMenu("Generate Map")]
         private async Task GenerateMapAsync()
         {
             if (nodeMapSettings != null)
             {
                 nodeMap = await NodeMapGenerator.Generate(nodeMapSettings, useSeed ? seed : -1);
-                
+
                 if (nodeMap != null)
                 {
                     seed = nodeMap.Seed;
-                    ApplyMapTransformations();
+                    ApplyMapTransformation();
+
+#if UNITY_EDITOR
+                    SceneView.RepaintAll();
+#endif
                 }
             }
         }
 
-        private void ApplyMapTransformations()
+        private void ApplyMapTransformation()
         {
-            if (transformationSource != null)
+            transformationCenter = ComputeCenter(nodeMap.Nodes.Select(n => n.LocalPosition.ToVector3()));
+
+            bool apply = applyTransformation && transformationSource != null;
+            transformationMatrix = Matrix4x4.TRS(
+                apply ? transformationSource.position : Vector3.zero,
+                apply ? transformationSource.rotation : Quaternion.identity,
+                apply ? transformationSource.localScale : Vector3.one
+            );
+
+            foreach (Node node in nodeMap.Nodes)
             {
-                Vector3 center = ComputeCenter(nodeMap.Nodes.Select(n => n.LocalPosition.ToVector3()));
-
-                Matrix4x4 matrix = Matrix4x4.TRS(
-                    transformationSource.position,
-                    transformationSource.rotation,
-                    transformationSource.localScale
-                );
-
-                foreach (Node node in nodeMap.Nodes)
-                {
-                    Vector3 local = node.LocalPosition.ToVector3() - center;
-                    node.WorldPosition = matrix.MultiplyPoint3x4(local);
-                }
+                Vector3 local = node.LocalPosition.ToVector3() - transformationCenter;
+                node.WorldPosition = transformationMatrix.MultiplyPoint3x4(local);
             }
         }
 
@@ -86,8 +94,6 @@ namespace HHG.NodeMap.Runtime
             return sum / count;
         }
 
-
-        [ContextMenu("Render Map")]
         private void RenderMap()
         {
             if (nodeMap != null)
@@ -129,12 +135,15 @@ namespace HHG.NodeMap.Runtime
                 Node node = connection.Destination;
                 nodeRenderers[node].Refresh(node, true);
                 connectionRenderers[connection].Refresh(connection, true);
-            }          
+            }
         }
 
         private async void OnValidate()
         {
-            await GenerateMapAsync();
+            if (!Application.isPlaying)
+            {
+                await GenerateMapAsync();
+            }
         }
 
         private async void OnDrawGizmos()
@@ -154,13 +163,19 @@ namespace HHG.NodeMap.Runtime
         {
             if (nodeMapSettings != null && nodeMapSettings.IsDirty())
             {
+                invalidSettings = false;
                 nodeMapSettings.MarkClean();
                 nodeMap = null; // Force regenerate
             }
 
-            if (nodeMap == null)
+            if (nodeMap == null && !invalidSettings)
             {
                 await GenerateMapAsync();
+
+                if (nodeMap == null)
+                {
+                    invalidSettings = true;
+                }
             }
 
             if (nodeMap != null)
@@ -168,7 +183,7 @@ namespace HHG.NodeMap.Runtime
                 if (transformationSource.hasChanged)
                 {
                     transformationSource.hasChanged = false;
-                    ApplyMapTransformations();
+                    ApplyMapTransformation();
                 }
 
                 Gizmos.color = Color.red;
@@ -183,6 +198,15 @@ namespace HHG.NodeMap.Runtime
                 {
                     Gizmos.DrawLine(connection.Source.WorldPosition, connection.Destination.WorldPosition);
                 }
+
+                Gizmos.color = Color.yellow;
+                Matrix4x4 matrix = Gizmos.matrix;
+                Gizmos.matrix = transformationMatrix;
+                float scaleFactor = Mathf.Max(transformationMatrix.lossyScale.x, transformationMatrix.lossyScale.y, transformationMatrix.lossyScale.z);
+                Gizmos.DrawWireSphere(nodeMapSettings.StartPoint, .2f / scaleFactor);
+                Gizmos.DrawWireSphere(nodeMapSettings.EndPoint, .2f / scaleFactor);
+                Gizmos.DrawWireCube(Vector3.zero, nodeMapSettings.SamplingArea);
+                Gizmos.matrix = matrix;
             }
         }
 

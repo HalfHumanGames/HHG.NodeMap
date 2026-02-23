@@ -13,8 +13,8 @@ namespace HHG.NodeMap.Runtime
 
             Vector2 startPoint = settings.StartPoint;
             Vector2 endPoint = settings.EndPoint;
-            Vector2 samplingAreaMin = settings.SamplingAreaMin;
-            Vector2 samplingAreaMax = settings.SamplingAreaMax;
+            Vector2 samplingAreaMin = new Vector2(-settings.SamplingArea.x / 2f, -settings.SamplingArea.y / 2f);
+            Vector2 samplingAreaMax = new Vector2(settings.SamplingArea.x / 2f, settings.SamplingArea.y / 2f);
 
             float minDistance = settings.Distance.x;
             float maxDistance = settings.Distance.y;

@@ -9,6 +9,10 @@ namespace HHG.NodeMap.Runtime
 {
     public static class NodeMapGenerator
     {
+        private const int maxGenerationAttempts = 10;
+        private const int maxCreatePathAttempts = 10;
+        private const int maxNodeAssignAttempts = 10;
+
         private static readonly Dictionary<Algorithm, IAlgorithm> algorithms = new Dictionary<Algorithm, IAlgorithm>
         {
             { Algorithm.PoissonDisk, new PoissonDiskAlgorithm() },
@@ -35,7 +39,8 @@ namespace HHG.NodeMap.Runtime
                 {
                     // Run multiple tasks asynchronously and in parallel for best performance
                     List<Task<NodeMap>> tasks = new List<Task<NodeMap>>();
-                    for (int i = 0; i < System.Environment.ProcessorCount; i++)
+                    int threads = 1; //System.Environment.ProcessorCount
+                    for (int i = 0; i < threads; i++)
                     {
                         seed = System.Environment.TickCount + i;
                         System.Random random = new System.Random(seed);
@@ -81,18 +86,21 @@ namespace HHG.NodeMap.Runtime
             int minNodeCount = settings.NodeCount.x;
             int maxNodeCount = settings.NodeCount.y;
 
-            while (minNodeCount-- > 3)
+            //while (minNodeCount-- > 3)
             {
-                for (int i = 0; i < 10; i++)
+                for (int i = 0; i < maxGenerationAttempts; i++)
                 {
                     if (token.IsCancellationRequested) return null;
 
                     NodeMap nodeMap = algorithm.Generate(settings, random);
-                    for (int j = 0; j < 10; j++)
+
+                    if (nodeMap == null) continue; // Failed to generate map, try again
+
+                    for (int j = 0; j < maxCreatePathAttempts; j++)
                     {
                         if (token.IsCancellationRequested) return null;
 
-                        NodeMap tempMap = Helper(nodeMap, settings, random);
+                        NodeMap tempMap = CreatePaths(nodeMap, settings, random);
                         if (tempMap.Nodes.Count > minNodeCount && tempMap.Nodes.Count < maxNodeCount)
                         {
                             tempMap.Seed = seed;
@@ -102,10 +110,12 @@ namespace HHG.NodeMap.Runtime
                 }
             }
 
+            Debug.Log("No valid map could be generated with these settings.");
+
             return null; // No valid map found
         }
 
-        public static NodeMap Helper(NodeMap nodeMap, NodeMapSettingsAsset settings, System.Random random)
+        public static NodeMap CreatePaths(NodeMap nodeMap, NodeMapSettingsAsset settings, System.Random random)
         {
             List<Node> path = new List<Node>();
             HashSet<Node> activePoints = new HashSet<Node>();
@@ -281,7 +291,7 @@ namespace HHG.NodeMap.Runtime
                 return;
             }
 
-            int attempts = 100;
+            int attempts = maxNodeAssignAttempts;
             Dictionary<NodeAsset, int> nodeAssetCounts = new Dictionary<NodeAsset, int>();
 
             do
@@ -307,9 +317,9 @@ namespace HHG.NodeMap.Runtime
                         node.NodeAsset = nodeAsset;
                         nodeAssetCounts[nodeAsset]++;
                     }
-                    else if (Application.isPlaying)
+                    else
                     {
-                        throw new System.ArgumentException($"Failed to assign node asset to node: {node}");
+                        Debug.LogError($"Failed to assign node asset to node: {node}");
                     }
                 }
 
