@@ -78,8 +78,8 @@ namespace HHG.NodeMap.Runtime
         // Generator function that runs until a valid node map is found
         private static NodeMap GenerateMapUntilValid(NodeMapSettingsAsset settings, IAlgorithm algorithm, CancellationToken token, System.Random random, int seed)
         {
-            int minNodeCount = settings.MinNodeCount;
-            int maxNodeCount = settings.MaxNodeCount;
+            int minNodeCount = settings.NodeCount.x;
+            int maxNodeCount = settings.NodeCount.y;
 
             while (minNodeCount-- > 3)
             {
@@ -116,7 +116,7 @@ namespace HHG.NodeMap.Runtime
             List<Node> tempNodes = tempMap.Nodes;
             List<Connection> tempConnections = tempMap.Connections;
 
-            int minNodeCount = settings.MinNodeCount;
+            int minNodeCount = settings.NodeCount.x;
             int iterations = settings.Iterations;
             int removalsPerIteration = settings.RemovalsPerIteration;
 

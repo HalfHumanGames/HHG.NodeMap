@@ -307,8 +307,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   alwaysDrawGizmos: 1
-  useSeed: 1
-  seed: 866214863
+  useSeed: 0
+  seed: 872674476
   transformationSource: {fileID: 1610154182}
   nodePrefab: {fileID: 7325113554027282785, guid: 2b979801c7a164b4782b428a1210747f,
     type: 3}

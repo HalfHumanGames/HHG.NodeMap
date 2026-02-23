@@ -15,7 +15,7 @@ namespace HHG.NodeMap.Runtime
             float sin45 = Mathf.Sin(Mathf.PI / 4f);
             float spacingX = settings.Spacing.x;
             float spacingY = settings.Spacing.y;
-            float filterDistance = settings.FilterDistance;
+            float filterDistance = settings.DistanceFilter;
 
             List<Vector2> points = new();
             for (int y = 0; y < size; y++)

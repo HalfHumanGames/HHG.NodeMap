@@ -16,9 +16,9 @@ namespace HHG.NodeMap.Runtime
             Vector2 samplingAreaMin = settings.SamplingAreaMin;
             Vector2 samplingAreaMax = settings.SamplingAreaMax;
 
-            float minDistance = settings.MinDistance;
-            float maxDistance = settings.MaxDistance;
-            float filterDistance = settings.FilterDistance;
+            float minDistance = settings.Distance.x;
+            float maxDistance = settings.Distance.y;
+            float filterDistance = settings.DistanceFilter;
             float angleFilter = settings.AngleFilter;
 
             List<Vector2> points = PoissonDiskSampling.Sampling(samplingAreaMin, samplingAreaMax, minDistance, random);

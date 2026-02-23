@@ -29,8 +29,12 @@ namespace HHG.NodeMap.Runtime
         private async Task GenerateAndRenderMapAsync()
         {
             await GenerateMapAsync();
-            RenderMap();
-            SetCurrentNode(nodeMap.Start);
+            
+            if (nodeMap != null)
+            {
+                RenderMap();
+                SetCurrentNode(nodeMap.Start);
+            }
         }
 
         [ContextMenu("Generate Map")]
@@ -39,8 +43,12 @@ namespace HHG.NodeMap.Runtime
             if (nodeMapSettings != null)
             {
                 nodeMap = await NodeMapGenerator.Generate(nodeMapSettings, useSeed ? seed : -1);
-                seed = nodeMap.Seed;
-                ApplyMapTransformations();
+                
+                if (nodeMap != null)
+                {
+                    seed = nodeMap.Seed;
+                    ApplyMapTransformations();
+                }
             }
         }
 
@@ -155,14 +163,14 @@ namespace HHG.NodeMap.Runtime
                 await GenerateMapAsync();
             }
 
-            if (transformationSource.hasChanged)
-            {
-                transformationSource.hasChanged = false;
-                ApplyMapTransformations();
-            }
-
             if (nodeMap != null)
             {
+                if (transformationSource.hasChanged)
+                {
+                    transformationSource.hasChanged = false;
+                    ApplyMapTransformations();
+                }
+
                 Gizmos.color = Color.red;
                 foreach (Node node in nodeMap.Nodes)
                 {
