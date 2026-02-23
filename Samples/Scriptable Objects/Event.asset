@@ -13,6 +13,11 @@ MonoBehaviour:
   m_Name: Event
   m_EditorClassIdentifier: 
   sprite: {fileID: 21300000, guid: a060034a69fc1324c9852e7403d98777, type: 3}
+  selectionWeight: 2
+  count: {x: 3, y: 6}
+  distanceFromStart: {x: 1, y: -1}
+  distanceFromEnd: {x: 1, y: -1}
+  distanceFromSimilar: {x: 2, y: -1}
   onClick:
     actions:
     - rid: 8327615733633908737

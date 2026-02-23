@@ -13,6 +13,11 @@ MonoBehaviour:
   m_Name: Fight
   m_EditorClassIdentifier: 
   sprite: {fileID: 21300000, guid: 04cf07cc8961f2949bed14856b9c9fde, type: 3}
+  selectionWeight: 3
+  count: {x: -1, y: -1}
+  distanceFromStart: {x: 1, y: -1}
+  distanceFromEnd: {x: 1, y: -1}
+  distanceFromSimilar: {x: -1, y: -1}
   onClick:
     actions:
     - rid: 8327615733633908740

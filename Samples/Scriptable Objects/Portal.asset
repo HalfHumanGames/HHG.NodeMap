@@ -13,6 +13,11 @@ MonoBehaviour:
   m_Name: Portal
   m_EditorClassIdentifier: 
   sprite: {fileID: 21300000, guid: 5161b46eff206f64189333f32ae2de6d, type: 3}
+  selectionWeight: 0
+  count: {x: 1, y: 3}
+  distanceFromStart: {x: -1, y: -1}
+  distanceFromEnd: {x: 0, y: 0}
+  distanceFromSimilar: {x: -1, y: -1}
   onClick:
     actions:
     - rid: 8327615733633908741

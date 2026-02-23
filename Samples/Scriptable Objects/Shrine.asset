@@ -13,6 +13,11 @@ MonoBehaviour:
   m_Name: Shrine
   m_EditorClassIdentifier: 
   sprite: {fileID: 21300000, guid: ffd11e5005fc0584585eecc54578ad31, type: 3}
+  selectionWeight: 2
+  count: {x: 1, y: 3}
+  distanceFromStart: {x: 3, y: -1}
+  distanceFromEnd: {x: 2, y: -1}
+  distanceFromSimilar: {x: 3, y: -1}
   onClick:
     actions:
     - rid: 8327615733633908739
