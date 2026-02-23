@@ -276,13 +276,13 @@ namespace HHG.NodeMap.Runtime
 
         private static void AssignNodeAssets(NodeMap nodeMap, NodeMapSettingsAsset settings, System.Random random)
         {
-            if (settings.NodeSettings.Count == 0)
+            if (settings.NodeAssets.Count == 0)
             {
                 return;
             }
 
             int attempts = 100;
-            Dictionary<NodeSettings, int> nodeInfoCounts = new Dictionary<NodeSettings, int>();
+            Dictionary<NodeAsset, int> nodeAssetCounts = new Dictionary<NodeAsset, int>();
 
             do
             {
@@ -291,21 +291,21 @@ namespace HHG.NodeMap.Runtime
 
                 // Don't use ToDictionary since when add a new item to the list, it copies
                 // the last element in the list, which causes a duplicate key exception
-                foreach (NodeSettings nodeInfo in settings.NodeSettings)
+                foreach (NodeAsset nodeAsset in settings.NodeAssets)
                 {
-                    nodeInfoCounts[nodeInfo] = 0;
+                    nodeAssetCounts[nodeAsset] = 0;
                 }
 
                 nodeMap.Nodes.Shuffle(random);
                 
                 foreach (Node node in nodeMap.Nodes)
                 {
-                    NodeSettings nodeInfo = settings.NodeSettings.Where((nodeInfo) => NodeMeetsNodeInfoRequirements(nodeMap, node, nodeInfo, nodeInfoCounts)).SelectByWeight(nodeInfo => nodeInfo.SelectionWeight, random);
+                    NodeAsset nodeAsset = settings.NodeAssets.Where((nodeAsset) => NodeMeetsNodeInfoRequirements(nodeMap, node, nodeAsset, nodeAssetCounts)).SelectByWeight(nodeInfo => nodeInfo.SelectionWeight, random);
 
-                    if (nodeInfo != null)
+                    if (nodeAsset != null)
                     {
-                        node.NodeAsset = nodeInfo.NodeAsset;
-                        nodeInfoCounts[nodeInfo]++;
+                        node.NodeAsset = nodeAsset;
+                        nodeAssetCounts[nodeAsset]++;
                     }
                     else if (Application.isPlaying)
                     {
@@ -317,7 +317,7 @@ namespace HHG.NodeMap.Runtime
 
             // We only need to check the min count requirement since we already
             // check the max count requirment in NodeMeetsNodeInfoRequirements
-            } while (attempts > 0 && nodeInfoCounts.Any(n => n.Key.MinCount != -1 && n.Value < n.Key.MinCount));
+            } while (attempts > 0 && nodeAssetCounts.Any(n => n.Key.Count.x != -1 && n.Value < n.Key.Count.x));
 
             if (attempts == 0)
             {
@@ -325,23 +325,23 @@ namespace HHG.NodeMap.Runtime
             }
         }
 
-        private static bool NodeMeetsNodeInfoRequirements(NodeMap nodeMap, Node node, NodeSettings nodeInfo, Dictionary<NodeSettings, int> nodeCounts)
+        private static bool NodeMeetsNodeInfoRequirements(NodeMap nodeMap, Node node, NodeAsset nodeAsset, Dictionary<NodeAsset, int> nodeCounts)
         {
-            if (nodeInfo.MaxCount != -1 && nodeCounts[nodeInfo] >= nodeInfo.MaxCount)
+            if (nodeAsset.Count.y != -1 && nodeCounts[nodeAsset] >= nodeAsset.Count.y)
             {
                 return false;
             }
 
             int distanceFromStart = GetDistanceFromStart(nodeMap, node);
             int distanceFromEnd = GetDistanceFromEnd(nodeMap, node);
-            int distanceFromSimilar = GetDistanceFromSimilar(nodeMap, node, nodeInfo.NodeAsset); // Pass nodeInfo.NodeAsset since node.NodeAsset has not yet been assigned
+            int distanceFromSimilar = GetDistanceFromSimilar(nodeMap, node, nodeAsset); // Pass nodeAsset since node.NodeAsset has not yet been assigned
 
-            return (distanceFromStart == -1 || nodeInfo.MaxDistanceFromStart == -1 || distanceFromStart <= nodeInfo.MaxDistanceFromStart) &&
-                   (distanceFromStart == -1 || nodeInfo.MinDistanceFromStart == -1 || distanceFromStart >= nodeInfo.MinDistanceFromStart) &&
-                   (distanceFromEnd == -1 || nodeInfo.MaxDistanceFromEnd == -1 || distanceFromEnd <= nodeInfo.MaxDistanceFromEnd) &&
-                   (distanceFromEnd == -1 || nodeInfo.MinDistanceFromEnd == -1 || distanceFromEnd >= nodeInfo.MinDistanceFromEnd) &&
-                   (distanceFromSimilar == -1 || nodeInfo.MaxDistanceFromSimilar == -1 || distanceFromSimilar <= nodeInfo.MaxDistanceFromSimilar) &&
-                   (distanceFromSimilar == -1 || nodeInfo.MinDistanceFromSimilar == -1 || distanceFromSimilar >= nodeInfo.MinDistanceFromSimilar);
+            return (distanceFromStart == -1 || nodeAsset.DistanceFromStart.y == -1 || distanceFromStart <= nodeAsset.DistanceFromStart.y) &&
+                   (distanceFromStart == -1 || nodeAsset.DistanceFromStart.x == -1 || distanceFromStart >= nodeAsset.DistanceFromStart.x) &&
+                   (distanceFromEnd == -1 || nodeAsset.DistanceFromEnd.y == -1 || distanceFromEnd <= nodeAsset.DistanceFromEnd.y) &&
+                   (distanceFromEnd == -1 || nodeAsset.DistanceFromEnd.x == -1 || distanceFromEnd >= nodeAsset.DistanceFromEnd.x) &&
+                   (distanceFromSimilar == -1 || nodeAsset.DistanceFromSimilar.y == -1 || distanceFromSimilar <= nodeAsset.DistanceFromSimilar.y) &&
+                   (distanceFromSimilar == -1 || nodeAsset.DistanceFromSimilar.x == -1 || distanceFromSimilar >= nodeAsset.DistanceFromSimilar.x);
         }
     }
 }

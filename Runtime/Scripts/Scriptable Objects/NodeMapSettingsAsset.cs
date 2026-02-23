@@ -24,7 +24,7 @@ namespace HHG.NodeMap.Runtime
         public float FilterDistance => filterDistance;
         public float RemovalChance => removalChance;
         public float RandomNoise => randomNoise;
-        public IReadOnlyList<NodeSettings> NodeSettings => nodeSettings;
+        public IReadOnlyList<NodeAsset> NodeAssets => nodeAssets;
 
         [SerializeField] private Algorithm algorithm;
         [SerializeField] private int iterations = 8;
@@ -43,7 +43,7 @@ namespace HHG.NodeMap.Runtime
         [SerializeField] private float filterDistance = 10f;
         [SerializeField] private float removalChance = .3f;
         [SerializeField] private float randomNoise = 0f;
-        [SerializeField, FormerlySerializedAs("nodeInfos")] private List<NodeSettings> nodeSettings = new List<NodeSettings>();
+        [SerializeField] private List<NodeAsset> nodeAssets = new List<NodeAsset>();
 
         private bool isDirty;
 
