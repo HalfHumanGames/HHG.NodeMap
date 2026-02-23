@@ -1,4 +1,5 @@
 using UnityEngine;
+
 namespace HHG.NodeMap.Runtime
 {
     [RequireComponent(typeof(LineRenderer))]
@@ -16,12 +17,7 @@ namespace HHG.NodeMap.Runtime
             lineRenderer.positionCount = 2;
             lineRenderer.startColor = interactable ? Color.white : Color.black;
             lineRenderer.endColor = interactable ? Color.white : Color.black;
-            lineRenderer.SetPositions(new Vector3[] { connection.Source.Position, connection.Destination.Position });
-
-            if (connection.Source.Position.x < connection.Destination.Position.x)
-            {
-                lineRenderer.textureScale = new Vector2(lineRenderer.textureScale.x, -lineRenderer.textureScale.y);
-            }
+            lineRenderer.SetPositions(new Vector3[] { connection.Source.WorldPosition, connection.Destination.WorldPosition });
         }
     }
 }

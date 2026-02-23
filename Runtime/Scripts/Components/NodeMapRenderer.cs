@@ -1,6 +1,7 @@
 using HHG.Common.Runtime;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 
@@ -8,8 +9,8 @@ namespace HHG.NodeMap.Runtime
 {
     public class NodeMapRenderer : MonoBehaviour
     {
-        [SerializeField] private Transform nodeContainer;
-        [SerializeField] private Transform connectionContainer;
+        [SerializeField] private bool alwaysDrawGizmos;
+        [SerializeField] private Transform transformSource;
         [SerializeField] private NodeRenderer nodePrefab;
         [SerializeField] private ConnectionRenderer connectionPrefab;
         [SerializeField] private NodeMapSettingsAsset nodeMapSettings;
@@ -17,66 +18,91 @@ namespace HHG.NodeMap.Runtime
         private NodeMap nodeMap;
         private Dictionary<Node, NodeRenderer> nodeRenderers = new Dictionary<Node, NodeRenderer>();
         private Dictionary<Connection, ConnectionRenderer> connectionRenderers = new Dictionary<Connection, ConnectionRenderer>();
+        private Vector3 sourcePosition;
+        private Quaternion sourceRotation;
+        private Vector3 sourceScale;
         private bool hasStarted;
 
-        private void OnEnable()
+        private async void OnEnable()
         {
             if (hasStarted)
             {
-                GenerateAndRenderMap();
+                await GenerateAndRenderMapAsync();
             }
         }
 
-        private void Start()
+        private async void Start()
         {
-            GenerateAndRenderMap();
+            await GenerateAndRenderMapAsync();
             hasStarted = true;
         }
 
-        private void GenerateAndRenderMap()
+        private async Task GenerateAndRenderMapAsync()
         {
-            GenerateMap();
+            await GenerateMapAsync();
             RenderMap();
             SetCurrentNode(nodeMap.Start);
         }
 
-        private void GenerateMap()
+        [ContextMenu("Generate Map")]
+        private async Task GenerateMapAsync()
         {
             if (nodeMapSettings != null)
             {
-                nodeMap = NodeMapGenerator.Generate(nodeMapSettings);
+                nodeMap = await NodeMapGenerator.Generate(nodeMapSettings);
+                RealignMap();
+                
             }
         }
 
+        private void RealignMap()
+        {
+            if (transformSource != null)
+            {
+                Vector3 center = ComputeCenter(nodeMap.Nodes.Select(n => n.LocalPosition.ToVector3()).ToArray());
+
+                Matrix4x4 matrix = Matrix4x4.TRS(
+                    transformSource.position,
+                    transformSource.rotation,
+                    transformSource.localScale
+                );
+
+                foreach (Node node in nodeMap.Nodes)
+                {
+                    Vector3 local = node.LocalPosition.ToVector3() - center;
+                    node.WorldPosition = matrix.MultiplyPoint3x4(local);
+                }
+            }
+        }
+
+        public static Vector3 ComputeCenter(Vector3[] points)
+        {
+            Vector3 sum = Vector3.zero;
+            foreach (var p in points)
+                sum += p;
+
+            return sum / points.Length;
+        }
+
+
+        [ContextMenu("Render Map")]
         private void RenderMap()
         {
             if (nodeMap != null)
             {
-                nodeContainer.gameObject.DestroyChildren();
-                connectionContainer.gameObject.DestroyChildren();
-
-                RectTransform containerRectTransform = nodeContainer as RectTransform;
-                Canvas canvas = containerRectTransform != null ? containerRectTransform.GetComponentInParent<Canvas>(true) : null;
+                gameObject.DestroyChildren();
 
                 foreach (Node node in nodeMap.Nodes)
                 {
-                    NodeRenderer nodeRenderer = Instantiate(nodePrefab, node.Position, Quaternion.identity, nodeContainer);
+                    NodeRenderer nodeRenderer = Instantiate(nodePrefab, node.WorldPosition, nodePrefab.transform.rotation, transform);
                     nodeRenderer.Refresh(node);
-
-                    RectTransform nodeRectTransform = nodeRenderer.transform as RectTransform;
-                    if (containerRectTransform && nodeRectTransform)
-                    {
-                        nodeRectTransform.anchoredPosition = canvas.WorldToAnchoredPoint(containerRectTransform, node.Position);
-                    }
-
                     nodeRenderers[node] = nodeRenderer;
                 }
 
                 foreach (Connection connection in nodeMap.Connections)
                 {
-                    ConnectionRenderer connectionRenderer = Instantiate(connectionPrefab, connectionContainer);
+                    ConnectionRenderer connectionRenderer = Instantiate(connectionPrefab, Vector3.zero, connectionPrefab.transform.rotation, transform);
                     connectionRenderer.Refresh(connection);
-
                     connectionRenderers[connection] = connectionRenderer;
                 }
             }
@@ -104,12 +130,25 @@ namespace HHG.NodeMap.Runtime
             }          
         }
 
-        private void OnValidate()
+        private async void OnValidate()
         {
-            GenerateMap();
+            await GenerateMapAsync();
         }
 
-        private void OnDrawGizmosSelected()
+        private async void OnDrawGizmos()
+        {
+            if (alwaysDrawGizmos)
+            {
+                await DrawGizmos();
+            }
+        }
+
+        private async void OnDrawGizmosSelected()
+        {
+            await DrawGizmos();
+        }
+
+        private async Task DrawGizmos()
         {
             if (nodeMapSettings != null && nodeMapSettings.IsDirty())
             {
@@ -119,7 +158,17 @@ namespace HHG.NodeMap.Runtime
 
             if (nodeMap == null)
             {
-                GenerateMap();
+                await GenerateMapAsync();
+            }
+
+            if (transformSource.position != sourcePosition ||
+                transformSource.rotation != sourceRotation||
+                transformSource.lossyScale != sourceScale)
+            {
+                sourcePosition = transformSource.position;
+                sourceRotation = transformSource.rotation;
+                sourceScale = transformSource.lossyScale;
+                RealignMap();
             }
 
             if (nodeMap != null)
@@ -127,21 +176,21 @@ namespace HHG.NodeMap.Runtime
                 Gizmos.color = Color.red;
                 foreach (Node node in nodeMap.Nodes)
                 {
-                    Gizmos.DrawWireSphere(node.Position, 0.2f);
-                    Handles.Label(node.Position + Vector2.right * .25f, node.NodeAsset != null ? node.NodeAsset.Asset.name : string.Empty);
+                    Gizmos.DrawWireSphere(node.WorldPosition, 0.2f);
+                    Handles.Label(node.WorldPosition + Vector3.right * .25f, node.NodeAsset != null ? node.NodeAsset.Asset.name : string.Empty);
                 }
 
                 Gizmos.color = Color.green;
                 foreach (Connection connection in nodeMap.Connections)
                 {
-                    Gizmos.DrawLine(connection.Source.Position, connection.Destination.Position);
+                    Gizmos.DrawLine(connection.Source.WorldPosition, connection.Destination.WorldPosition);
                 }
             }
         }
 
-        [ContextMenu("Generate Map Test")] private void GenerateMapTest() => PerformanceUtil.MeasureDuration("Generation time", () => GenerateMap());
-        [ContextMenu("Generate 100 Maps Test")] private void Generate100MapsTest() => PerformanceUtil.MeasureAverageDuration("Average generation time", () => GenerateMap(), 100);
-        [ContextMenu("Generate 1000 Maps Test")] private void Generate1000MapsTest() => PerformanceUtil.MeasureAverageDuration("Average generation time", () => GenerateMap(), 1000);
+        [ContextMenu("Generate Map Test")] private void GenerateMapTest() => PerformanceUtil.MeasureDuration("Generation time", () => GenerateMapAsync().Wait());
+        [ContextMenu("Generate 100 Maps Test")] private void Generate100MapsTest() => PerformanceUtil.MeasureAverageDuration("Average generation time", () => GenerateMapAsync().Wait(), 100);
+        [ContextMenu("Generate 1000 Maps Test")] private void Generate1000MapsTest() => PerformanceUtil.MeasureAverageDuration("Average generation time", () => GenerateMapAsync().Wait(), 1000);
 
         private string json = string.Empty;
 

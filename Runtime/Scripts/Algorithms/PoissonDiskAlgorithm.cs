@@ -28,7 +28,7 @@ namespace HHG.NodeMap.Runtime
             points.Add(startPoint);
             points.Add(endPoint);
 
-            Dictionary<Vector2, Node> pointToNode = points.ToDictionary(point => point, point => new Node { Position = point });
+            Dictionary<Vector2, Node> pointToNode = points.ToDictionary(point => point, point => new Node { LocalPosition = point });
             nodeMap.Start = pointToNode[startPoint];
             nodeMap.End = pointToNode[endPoint];
             nodeMap.Nodes.AddRange(pointToNode.Values);

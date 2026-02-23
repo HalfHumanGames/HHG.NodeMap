@@ -15,7 +15,7 @@ namespace HHG.NodeMap.Runtime
             { Algorithm.DiamondGrid, new DiamondGridAlgorithm() }
         };
 
-        public static NodeMap Generate(NodeMapSettingsAsset settings)
+        public static async Task<NodeMap> Generate(NodeMapSettingsAsset settings)
         {
             settings.Validate(); // Always validate first
 
@@ -24,25 +24,25 @@ namespace HHG.NodeMap.Runtime
                 throw new System.ArgumentException($"Unsupported algorithm: {settings.Algorithm}");
             }
 
-            using var cts = new CancellationTokenSource();
-            var token = cts.Token;
+            using var cancellationTokenSource = new CancellationTokenSource();
+            var token = cancellationTokenSource.Token;
 
             // Run multiple tasks and block until one completes
-            var tasks = Enumerable.Range(0, System.Environment.ProcessorCount)
-                .Select(_ => Task.Run(() => GenerateMapUntilValid(settings, algorithm, token), token));
+            var tasks = Enumerable.Range(0, System.Environment.ProcessorCount).
+                Select(_ => Task.Run(() => GenerateMapUntilValid(settings, algorithm, token), token));
 
             try
             {
                 // Wait synchronously for the first task to complete
-                NodeMap result = Task.WhenAny(tasks).Result.Result;
-                cts.Cancel(); // Cancel remaining tasks
+                NodeMap result = await Task.WhenAny(tasks).Result;
+                cancellationTokenSource.Cancel(); // Cancel remaining tasks
 
                 if (result != null)
                 {
                     float randomNoise = settings.RandomNoise;
                     foreach (Node node in result.Nodes)
                     {
-                        node.Position += Random.insideUnitCircle * randomNoise;
+                        node.LocalPosition += Random.insideUnitCircle * randomNoise;
                     }
 
                     AssignNodeAssets(result, settings);

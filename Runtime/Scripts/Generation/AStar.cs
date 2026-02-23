@@ -39,13 +39,13 @@ namespace HHG.NodeMap.Runtime
                     }
 
                     Node neighbor = connection.Destination;
-                    float tentativeGScore = gScore[current] + Vector2.Distance(current.Position, neighbor.Position);
+                    float tentativeGScore = gScore[current] + Vector2.Distance(current.LocalPosition, neighbor.LocalPosition);
 
                     if (!gScore.ContainsKey(neighbor) || tentativeGScore < gScore[neighbor])
                     {
                         cameFrom[neighbor] = current;
                         gScore[neighbor] = tentativeGScore;
-                        float fScore = tentativeGScore + Vector2.Distance(neighbor.Position, end.Position);
+                        float fScore = tentativeGScore + Vector2.Distance(neighbor.LocalPosition, end.LocalPosition);
                         openSet.Enqueue(neighbor, fScore);
                     }
                 }

@@ -46,7 +46,7 @@ namespace HHG.NodeMap.Runtime
 
             foreach (Vector2 point in translatedPoints)
             {
-                Node node = new Node { Position = point };
+                Node node = new Node { LocalPosition = point };
                 nodeMap.Nodes.Add(node);
             }
 
