@@ -32,7 +32,7 @@ namespace HHG.NodeMap.Runtime
         [SerializeField, ShowIf(nameof(algorithm), Algorithm.PoissonDisk), MinMaxSlider(.1f, 100f)] private Vector2 distance = new Vector2(1f, 1f);
         [SerializeField, ShowIf(nameof(algorithm), Algorithm.DiamondGrid)] private Vector2 spacing = new Vector2(1, 1);
         [SerializeField, Range(0, 100)] private int iterations = 8;
-        [SerializeField, Range(1, 100)] private int removalsPerIteration = 1;
+        [SerializeField, Range(0, 100)] private int removalsPerIteration = 1;
         [SerializeField, Range(0f, 1f)] private float removalChance = .3f;
         [SerializeField, Range(1f, 100f)] private float distanceFilter = 10f;
         [SerializeField, ShowIf(nameof(algorithm), Algorithm.PoissonDisk), Range(5f, 85f)] private float angleFilter = 15f;

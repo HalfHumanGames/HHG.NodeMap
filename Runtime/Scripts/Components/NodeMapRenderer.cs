@@ -13,13 +13,14 @@ namespace HHG.NodeMap.Runtime
     {
         [EditorButton(nameof(GenerateAndRenderMapAsync), "Generate Map", PositionType = ButtonPositionType.Above)]
         [SerializeField] private bool alwaysDrawGizmos;
+        [SerializeField] private bool drawSettingGizmos;
         [SerializeField] private bool useSeed;
         [SerializeField] private int seed = -1;
         [SerializeField] private bool applyTransformation;
         [SerializeField] private Transform transformationSource;
         [SerializeField] private NodeRenderer nodePrefab;
         [SerializeField] private ConnectionRenderer connectionPrefab;
-        [SerializeField] private NodeMapSettingsAsset nodeMapSettings;
+        [SerializeField, InLineEditor] private NodeMapSettingsAsset nodeMapSettings;
 
         private NodeMap nodeMap;
         private Dictionary<Node, NodeRenderer> nodeRenderers = new Dictionary<Node, NodeRenderer>();
@@ -199,14 +200,17 @@ namespace HHG.NodeMap.Runtime
                     Gizmos.DrawLine(connection.Source.WorldPosition, connection.Destination.WorldPosition);
                 }
 
-                Gizmos.color = Color.yellow;
-                Matrix4x4 matrix = Gizmos.matrix;
-                Gizmos.matrix = transformationMatrix;
-                float scaleFactor = Mathf.Max(transformationMatrix.lossyScale.x, transformationMatrix.lossyScale.y, transformationMatrix.lossyScale.z);
-                Gizmos.DrawWireSphere(nodeMapSettings.StartPoint, .2f / scaleFactor);
-                Gizmos.DrawWireSphere(nodeMapSettings.EndPoint, .2f / scaleFactor);
-                Gizmos.DrawWireCube(Vector3.zero, nodeMapSettings.SamplingArea);
-                Gizmos.matrix = matrix;
+                if (drawSettingGizmos)
+                {
+                    Gizmos.color = Color.yellow;
+                    Matrix4x4 matrix = Gizmos.matrix;
+                    Gizmos.matrix = transformationMatrix;
+                    float scaleFactor = Mathf.Max(transformationMatrix.lossyScale.x, transformationMatrix.lossyScale.y, transformationMatrix.lossyScale.z);
+                    Gizmos.DrawWireSphere(nodeMapSettings.StartPoint, .2f / scaleFactor);
+                    Gizmos.DrawWireSphere(nodeMapSettings.EndPoint, .2f / scaleFactor);
+                    Gizmos.DrawWireCube(Vector3.zero, nodeMapSettings.SamplingArea);
+                    Gizmos.matrix = matrix;
+                }
             }
         }
 

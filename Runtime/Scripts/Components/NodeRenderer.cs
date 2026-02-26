@@ -1,3 +1,5 @@
+using HHG.Common.Runtime;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -21,6 +23,11 @@ namespace HHG.NodeMap.Runtime
             button.interactable = interactable;
             button.onClick.RemoveListener(OnClick);
             button.onClick.AddListener(OnClick);
+
+            if (button.TryGetComponentInChildren(out TMP_Text label))
+            {
+                label.text = node.NodeAsset.Asset.name;
+            }
         }
 
         private void OnClick()
