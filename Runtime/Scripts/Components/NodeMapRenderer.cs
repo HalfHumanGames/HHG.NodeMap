@@ -139,6 +139,8 @@ namespace HHG.NodeMap.Runtime
             }
         }
 
+#if UNITY_EDITOR
+
         private async void OnValidate()
         {
             if (!Application.isPlaying)
@@ -221,5 +223,7 @@ namespace HHG.NodeMap.Runtime
         [ContextMenu("Test/Generate 1000 Maps")] private void TestGenerate1000Maps() => PerformanceUtil.MeasureAverageDuration("Average generation time", () => GenerateMapAsync().Wait(), 1000);
         [ContextMenu("Test/Save Map")] private void TestSaveMap() => json = nodeMap.ToJson();
         [ContextMenu("Test/Load Map")] private void TestLoadMap() => nodeMap.FromJsonOverwrite(json);
+
+#endif
     }
 }
