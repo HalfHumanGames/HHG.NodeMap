@@ -17,6 +17,7 @@ namespace HHG.NodeMap.Runtime
         [SerializeField] private bool useSeed;
         [SerializeField] private int seed = -1;
         [SerializeField] private bool applyTransformation;
+        [SerializeField] private Transform mapContainer;
         [SerializeField] private Transform transformationSource;
         [SerializeField] private NodeRenderer nodePrefab;
         [SerializeField] private ConnectionRenderer connectionPrefab;
@@ -28,10 +29,53 @@ namespace HHG.NodeMap.Runtime
         private Vector3 transformationCenter;
         private Matrix4x4 transformationMatrix;
         private bool invalidSettings = false;
+        private RectTransform mapContainerRect;
+        private Canvas canvas;
+
+        private void Awake()
+        {
+            mapContainerRect = transform as RectTransform;
+            canvas = mapContainerRect != null ? mapContainerRect.GetComponentInParent<Canvas>(true) : null;
+        }
+
+        private void UpdateConnectionRendererPoints()
+        {
+            foreach (var kv in connectionRenderers)
+            {
+                Connection connection = kv.Key;
+                ConnectionRenderer connectionRenderer = kv.Value;
+                NodeRenderer source = nodeRenderers[connection.Source];
+                NodeRenderer destination = nodeRenderers[connection.Destination];
+                Vector3 sourcePosition = NodeToWorldPosition(source.transform);
+                Vector3 destinationPosition = NodeToWorldPosition(destination.transform);
+                connectionRenderer.UpdatePositions(sourcePosition, destinationPosition);
+            }
+        }
+
+        private Vector3 NodeToWorldPosition(Transform nodeTransform)
+        {
+            if (canvas != null && canvas.renderMode == RenderMode.ScreenSpaceOverlay)
+            {
+                Vector3 screenPos = nodeTransform.position;
+                Vector3 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, Mathf.Abs(Camera.main.transform.position.z)));
+                worldPos.z = nodeTransform.position.z;
+                return worldPos;
+            }
+            return nodeTransform.position;
+        }
 
         private async void OnEnable()
         {
             await GenerateAndRenderMapAsync();
+        }
+
+        private void LateUpdate()
+        {
+            if (mapContainer.transform.hasChanged)
+            {
+                mapContainer.transform.hasChanged = false;
+                UpdateConnectionRendererPoints();
+            }
         }
 
         private async Task GenerateAndRenderMapAsync()
@@ -68,6 +112,7 @@ namespace HHG.NodeMap.Runtime
             transformationCenter = ComputeCenter(nodeMap.Nodes.Select(n => n.LocalPosition.ToVector3()));
 
             bool apply = applyTransformation && transformationSource != null;
+
             transformationMatrix = Matrix4x4.TRS(
                 apply ? transformationSource.position : Vector3.zero,
                 apply ? transformationSource.rotation : Quaternion.identity,
@@ -99,18 +144,26 @@ namespace HHG.NodeMap.Runtime
         {
             if (nodeMap != null)
             {
-                gameObject.DestroyChildren();
+                mapContainer.gameObject.DestroyChildren();
+                nodeRenderers.Clear();
+                connectionRenderers.Clear();
 
                 foreach (Node node in nodeMap.Nodes)
                 {
-                    NodeRenderer nodeRenderer = Instantiate(nodePrefab, node.WorldPosition, nodePrefab.transform.rotation, transform);
+                    NodeRenderer nodeRenderer = Instantiate(nodePrefab, node.WorldPosition, nodePrefab.transform.rotation, mapContainer);
                     nodeRenderer.Refresh(node);
                     nodeRenderers[node] = nodeRenderer;
+
+                    RectTransform nodeRectTransform = nodeRenderer.transform as RectTransform;
+                    if (mapContainerRect && nodeRectTransform)
+                    {
+                        nodeRectTransform.anchoredPosition = canvas.WorldToAnchoredPoint(mapContainerRect, node.WorldPosition);
+                    }
                 }
 
                 foreach (Connection connection in nodeMap.Connections)
                 {
-                    ConnectionRenderer connectionRenderer = Instantiate(connectionPrefab, Vector3.zero, connectionPrefab.transform.rotation, transform);
+                    ConnectionRenderer connectionRenderer = Instantiate(connectionPrefab, Vector3.zero, connectionPrefab.transform.rotation, mapContainer);
                     connectionRenderer.Refresh(connection);
                     connectionRenderers[connection] = connectionRenderer;
                 }
@@ -143,10 +196,15 @@ namespace HHG.NodeMap.Runtime
 
         private async void OnValidate()
         {
-            if (!Application.isPlaying)
+            if (CanValidate())
             {
                 await GenerateMapAsync();
             }
+        }
+
+        public static bool CanValidate()
+        {
+            return !Application.isPlaying && !EditorApplication.isCompiling && !EditorApplication.isUpdating && !BuildPipeline.isBuildingPlayer;
         }
 
         private async void OnDrawGizmos()

@@ -14,10 +14,15 @@ namespace HHG.NodeMap.Runtime
 
         public void Refresh(Connection connection, bool interactable = false)
         {
-            lineRenderer.positionCount = 2;
             lineRenderer.startColor = interactable ? Color.white : Color.black;
             lineRenderer.endColor = interactable ? Color.white : Color.black;
-            lineRenderer.SetPositions(new Vector3[] { connection.Source.WorldPosition, connection.Destination.WorldPosition });
+            UpdatePositions(connection.Source.WorldPosition, connection.Destination.WorldPosition);
+        }
+
+        public void UpdatePositions(Vector3 sourcePosition, Vector3 destinationPosition)
+        {
+            lineRenderer.positionCount = 2;
+            lineRenderer.SetPositions(new Vector3[] { sourcePosition, destinationPosition });
         }
     }
 }
