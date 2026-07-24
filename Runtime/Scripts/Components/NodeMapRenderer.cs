@@ -29,53 +29,20 @@ namespace HHG.NodeMap.Runtime
         private Vector3 transformationCenter;
         private Matrix4x4 transformationMatrix;
         private bool invalidSettings = false;
+        private RectTransform canvasRect;
         private RectTransform mapContainerRect;
         private Canvas canvas;
 
         private void Awake()
         {
-            mapContainerRect = transform as RectTransform;
-            canvas = mapContainerRect != null ? mapContainerRect.GetComponentInParent<Canvas>(true) : null;
-        }
-
-        private void UpdateConnectionRendererPoints()
-        {
-            foreach (var kv in connectionRenderers)
-            {
-                Connection connection = kv.Key;
-                ConnectionRenderer connectionRenderer = kv.Value;
-                NodeRenderer source = nodeRenderers[connection.Source];
-                NodeRenderer destination = nodeRenderers[connection.Destination];
-                Vector3 sourcePosition = NodeToWorldPosition(source.transform);
-                Vector3 destinationPosition = NodeToWorldPosition(destination.transform);
-                connectionRenderer.UpdatePositions(sourcePosition, destinationPosition);
-            }
-        }
-
-        private Vector3 NodeToWorldPosition(Transform nodeTransform)
-        {
-            if (canvas != null && canvas.renderMode == RenderMode.ScreenSpaceOverlay)
-            {
-                Vector3 screenPos = nodeTransform.position;
-                Vector3 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, Mathf.Abs(Camera.main.transform.position.z)));
-                worldPos.z = nodeTransform.position.z;
-                return worldPos;
-            }
-            return nodeTransform.position;
+            this.TryGetComponentInParent(out canvas);
+            canvasRect = canvas.transform as RectTransform;
+            mapContainerRect = mapContainer as RectTransform;
         }
 
         private async void OnEnable()
         {
             await GenerateAndRenderMapAsync();
-        }
-
-        private void LateUpdate()
-        {
-            if (mapContainer.transform.hasChanged)
-            {
-                mapContainer.transform.hasChanged = false;
-                UpdateConnectionRendererPoints();
-            }
         }
 
         private async Task GenerateAndRenderMapAsync()
@@ -112,12 +79,13 @@ namespace HHG.NodeMap.Runtime
             transformationCenter = ComputeCenter(nodeMap.Nodes.Select(n => n.LocalPosition.ToVector3()));
 
             bool apply = applyTransformation && transformationSource != null;
+            Matrix4x4 sourceMatrix = apply ? transformationSource.localToWorldMatrix : Matrix4x4.identity;
 
-            transformationMatrix = Matrix4x4.TRS(
-                apply ? transformationSource.position : Vector3.zero,
-                apply ? transformationSource.rotation : Quaternion.identity,
-                apply ? transformationSource.localScale : Vector3.one
-            );
+            // Ignore mapContainer's position: it's a canvas element anchored to screen center with
+            // large canvas-space coordinates, not a usable world-space translation.
+            Matrix4x4 containerMatrix = Matrix4x4.TRS(Vector3.zero, mapContainer.rotation, mapContainer.lossyScale);
+
+            transformationMatrix = containerMatrix * sourceMatrix;
 
             foreach (Node node in nodeMap.Nodes)
             {
@@ -155,16 +123,23 @@ namespace HHG.NodeMap.Runtime
                     nodeRenderers[node] = nodeRenderer;
 
                     RectTransform nodeRectTransform = nodeRenderer.transform as RectTransform;
-                    if (mapContainerRect && nodeRectTransform)
+                    if (canvasRect && nodeRectTransform)
                     {
                         nodeRectTransform.anchoredPosition = canvas.WorldToAnchoredPoint(mapContainerRect, node.WorldPosition);
+                        nodeRectTransform.localPosition = nodeRectTransform.localPosition.WithZ(0f);
                     }
                 }
 
                 foreach (Connection connection in nodeMap.Connections)
                 {
-                    ConnectionRenderer connectionRenderer = Instantiate(connectionPrefab, Vector3.zero, connectionPrefab.transform.rotation, mapContainer);
+                    ConnectionRenderer connectionRenderer = Instantiate(connectionPrefab, mapContainer);
+                    connectionRenderer.transform.SetAsFirstSibling();
                     connectionRenderer.Refresh(connection);
+
+                    RectTransform sourceRect = nodeRenderers[connection.Source].transform as RectTransform;
+                    RectTransform destinationRect = nodeRenderers[connection.Destination].transform as RectTransform;
+                    connectionRenderer.UpdatePositions(sourceRect.anchoredPosition, destinationRect.anchoredPosition);
+
                     connectionRenderers[connection] = connectionRenderer;
                 }
             }
@@ -241,9 +216,10 @@ namespace HHG.NodeMap.Runtime
 
             if (nodeMap != null)
             {
-                if (transformationSource.hasChanged)
+                if (transformationSource.hasChanged || mapContainer.hasChanged)
                 {
                     transformationSource.hasChanged = false;
+                    mapContainer.hasChanged = false;
                     ApplyMapTransformation();
                 }
 

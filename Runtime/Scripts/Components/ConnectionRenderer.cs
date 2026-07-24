@@ -1,28 +1,26 @@
+using HHG.Common.Runtime;
 using UnityEngine;
 
 namespace HHG.NodeMap.Runtime
 {
-    [RequireComponent(typeof(LineRenderer))]
+    [RequireComponent(typeof(UILineRenderer))]
     public class ConnectionRenderer : MonoBehaviour
     {
-        private LineRenderer lineRenderer;
+        private UILineRenderer lineRenderer;
 
         private void Awake()
         {
-            lineRenderer = GetComponent<LineRenderer>();
+            lineRenderer = GetComponent<UILineRenderer>();
         }
 
         public void Refresh(Connection connection, bool interactable = false)
         {
-            lineRenderer.startColor = interactable ? Color.white : Color.black;
-            lineRenderer.endColor = interactable ? Color.white : Color.black;
-            UpdatePositions(connection.Source.WorldPosition, connection.Destination.WorldPosition);
+            //lineRenderer.color = interactable ? Color.white : Color.black;
         }
 
-        public void UpdatePositions(Vector3 sourcePosition, Vector3 destinationPosition)
+        public void UpdatePositions(Vector2 sourcePosition, Vector2 destinationPosition)
         {
-            lineRenderer.positionCount = 2;
-            lineRenderer.SetPositions(new Vector3[] { sourcePosition, destinationPosition });
+            lineRenderer.SetPositions(new Vector2[] { sourcePosition, destinationPosition });
         }
     }
 }
