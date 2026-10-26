@@ -11,6 +11,11 @@ namespace HHG.NodeMap.Runtime
 {
     public class NodeMapRenderer : MonoBehaviour
     {
+        public NodeMap NodeMap => nodeMap;
+        public bool UseSeed { get => useSeed; set => useSeed = value; }
+
+        public event System.Action OnMapRendered;
+
         [EditorButton(nameof(GenerateAndRenderMapAsync), "Generate Map", PositionType = ButtonPositionType.Above)]
         [SerializeField] private bool alwaysDrawGizmos;
         [SerializeField] private bool drawSettingGizmos;
@@ -53,6 +58,7 @@ namespace HHG.NodeMap.Runtime
             {
                 RenderMap();
                 SetCurrentNode(nodeMap.Start);
+                OnMapRendered?.Invoke();
             }
         }
 
